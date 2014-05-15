@@ -1,6 +1,8 @@
 'use strict';
 
-var jbrowse = angular.module('jbrowse', ['ngRoute', 'ngGrid', 'genjs.services', 'gencloud.services', 'genjs.table', 'jbrowse.controllers']);
+var jbrowse = angular.module('jbrowse', [
+    'ngRoute', 'ngGrid', 'genjs.services', 'gencloud.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers'
+]);
 
 jbrowse.config(['$routeProvider', function ($routeProvider) {
 

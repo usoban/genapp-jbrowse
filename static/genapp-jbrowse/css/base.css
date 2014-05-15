@@ -1,0 +1,9 @@
+.jbrowse .gen-browser-container {
+    position: relative;
+    margin: auto;
+}
+
+/* overriding dijit theme div.container */
+div.container {
+    position: static;
+}
