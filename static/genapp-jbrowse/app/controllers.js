@@ -2,9 +2,6 @@
 
 angular.module('jbrowse.controllers', [])
     .controller('JBrowseCtl', ['_project', '$scope', '$route', function (_project, $scope, $route) {
-
-        $('.collapse').collapse();
-
         $route.current.params.caseId = '53725825fad58d4de892c2a7'; // TODO: hack.
         var type = 'all'; // TODO
         var data_type = ('data:' + type).toLowerCase();
