@@ -6,7 +6,10 @@ var jbrowse = angular.module('jbrowse', [
 
 jbrowse.config(['$routeProvider', function ($routeProvider) {
 
-   var resolveProject = ['resolveProject', function (resolveProject) { return resolveProject(); }];
+   var resolveProject = ['resolveProject', '$route', function (resolveProject, $route) {
+        $route.current.params.caseId = '5374802dfad58d3f5b4565da'; //  hack. TODO
+       return resolveProject();
+   }];
 
     $routeProvider.when('/', {
         templateUrl: '/static/genapp-jbrowse/partials/jbrowse.html',

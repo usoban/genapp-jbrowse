@@ -2,13 +2,16 @@
 
 angular.module('jbrowse.controllers', [])
     .controller('JBrowseCtl', ['_project', '$scope', '$route', function (_project, $scope, $route) {
-        $route.current.params.caseId = '53725825fad58d4de892c2a7'; // TODO: hack.
         var type = 'all'; // TODO
+
+        // =====================================
+        //      data table helper functions
+        // =====================================
         var data_type = ('data:' + type).toLowerCase();
-        var preFilter = function(obj) {
+        var preFilter = ''; /*function(obj) {
             var objtype = obj.type;
             return (objtype.indexOf(data_type) === 0) ? true : false
-        };
+        };*/
 
         $scope.project = _project;
         $scope.genOptions = {
@@ -16,7 +19,6 @@ angular.module('jbrowse.controllers', [])
             project: $scope.project,
             enableRowSelection: false
         };
-        console.log($scope.genOptions);
 
         $scope.tableOptions = {
             itemsByPage: 15,
@@ -29,6 +31,9 @@ angular.module('jbrowse.controllers', [])
             selectedItems: $scope.selection
         };
 
+        // =====================================
+        //      JBrowse initialization
+        // =====================================
         var JBrowse;
         require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json' ], function (Browser,ioQuery,JSON) {
            // the initial configuration of this JBrowse
@@ -67,7 +72,7 @@ angular.module('jbrowse.controllers', [])
                     }
                },
                makeFullViewURL: false,
-               updateBrowserURL: false
+               updateBrowserURL: true
            };
 
            //if there is ?addFeatures in the query params,
