@@ -7,7 +7,7 @@ var jbrowse = angular.module('jbrowse', [
 jbrowse.config(['$routeProvider', function ($routeProvider) {
 
    var resolveProject = ['resolveProject', '$route', function (resolveProject, $route) {
-        $route.current.params.caseId = '5374802dfad58d3f5b4565da'; //  hack. TODO
+        $route.current.params.caseId = '537a027efad58d7bd5ab97c7'; //  hack. TODO
        return resolveProject();
    }];
 
@@ -16,7 +16,8 @@ jbrowse.config(['$routeProvider', function ($routeProvider) {
         controller: 'JBrowseCtl',
         resolve: { _project: resolveProject },
         reloadOnSearch: false
-    }).otherwise({
+    });
+    $routeProvider.otherwise({
         redirectTo: '/'
     });
 }]);
