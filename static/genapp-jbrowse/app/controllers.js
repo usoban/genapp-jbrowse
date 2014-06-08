@@ -2,76 +2,146 @@
 var G;
 
 angular.module('jbrowse.controllers', [])
-    .controller('JBrowseCtl', ['_project', '$scope', '$route', function (_project, $scope, $route) {
+    .controller('JBrowseCtl', ['_project', '$scope', '$route', 'notify', function (_project, $scope, $route, notify) {
         var browserConnector,
             selectTrack,
             isArray;
 
+        // Track selection handler
         selectTrack = function (items) {
-            var item, track, url;
+            var addTrack, genTypeHandlers, reloadRefSeqs;
 
-            if (isArray(items) && items.length > 0) {
-                item = items[0];
+            // reloads reference sequences
+            reloadRefSeqs = function(newRefseqsUrl) {
+                var deferredRefSeqs,
+                    deferredSetup,
+                    setupFn;
 
-                if (item.type == "data:genome:fasta:") {
-                    // was pre-formatted with JBrowse's tool, so it has config
-                    track = '/api/data/' + item.id + '/download/trackList.json';
-                    $scope.browser.config.include.push(track);
-
-                    if ($scope.browser.reachedMilestone('loadConfig')) {
-                        delete $scope.browser._deferred['loadConfig'];
+                delete $scope.browser._deferred['reloadRefSeq'];
+                deferredSetup = $scope.browser._getDeferred('reloadRefSeqs');
+                setupFn = function() {
+                    if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length == 0) {
+                        return;
                     }
-                    console.log();
-
-
-                    $scope.browser.loadConfig().then(function(){
-                       $scope.browser.showTracks(['DNA']);
+                    _.each($scope.browser.allRefs, function(r){
+                        $scope.browser.refSeqSelectBox.addOption({
+                            label: r.name,
+                            value: r.name
+                        });
                     });
-                    // TODO: remove other DNA tracks.
+                    
+                    deferredSetup.resolve(true);
+                };
 
-                    track = {
-                        type:        'SequenceTrack',
-                        storeClass:  'JBrowse/Store/Sequence/StaticChunked',
-                        urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
-                        baseUrl:     '/api/data/' + item.id + '/download',
-                        category:    'Reference sequence',
-                        store:       'refseqs',
-                        key:         'Genesis test sequence',
-                        label:       'gen-dna',
-                        chunkSize:   20000
-                    };
+                $scope.browser.allRefs = {};
+                $scope.browser.refSeq = null;
+                $scope.browser.refSeqOrder = [];
+                $scope.browser.refSeqSelectBox.removeOption($scope.browser.refSeqSelectBox.getOptions());
+                $scope.browser.refSeqSelectBox.set('value', '');
 
-//                    console.log(track);
-//                    $scope.browser.addStoreConfig.call($scope.browser, 'refseqs', track);
-//                    $scope.browser.publish('/jbrowse/v1/c/tracks/new', [track]);
-//                    $scope.browser.trackConfigsByName.gen_seq = track;
-//                    $scope.browser.addTracks([track]);
-//                    $scope.browser.showTracks(['gen-dna']);
-//                     $scope.browser.replaceTracks([track]);
-                } else if (item.type == "data:alignment:bam:") {
-                    console.log(item);
+                $scope.browser.config['refSeqs'] = {
+                    url: newRefseqsUrl
+                };
 
-//                    $scope.browser.addStore()
+                delete $scope.browser._deferred['loadRefSeqs'];
 
-                    url = '/api/data/' + item.id + '/download/';
-                    track = {
+                deferredRefSeqs = $scope.browser.loadRefSeqs();
+                deferredRefSeqs.then(setupFn);
+
+                return deferredSetup;
+            };
+
+            // adds track to the JBrowse
+            addTrack = function(trackCfg) {
+                var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
+                    alreadyExists = _.find($scope.browser.config.tracks || [], function(v) {
+                        return v.label == trackCfg.label;
+                    }) !== undefined;
+
+                if (alreadyExists) {
+//                    notify.error('Track is already present in the viewport.');
+                    console.log('Track is already present in the viewport.');
+                    return;
+                }
+
+                // prepare for config loading.
+                $scope.browser.config.include = [];
+                if ($scope.browser.reachedMilestone('loadConfig')) {
+                    delete $scope.browser._deferred['loadConfig'];
+                }
+
+                $scope.browser.config.include.push({
+                    format: 'JB_json',
+                    version: 1,
+                    data: {
+                        sourceUrl: trackCfg.baseUrl || '#',
+                        tracks: [trackCfg]
+                    }
+                });
+                $scope.browser.loadConfig().then(function() {
+                    // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
+                    // which will be used for loading sequence chunks.
+                    if (isSequenceTrack) {
+                        $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
+                    }
+                    $scope.browser.showTracks([trackCfg.label]);
+                });
+            };
+
+            // handlers for each data object type
+            genTypeHandlers = {
+                'data:genome:fasta:': function(item){
+                    var baseUrl = '/api/data/' + item.id + '/download/seq',
+                        lbl = item.static.name,
+                        dontLoad = false;
+
+                    if ($scope.browser.config.stores/* && 'refseqs' in $scope.browser.config.stores*/) {
+                         $scope.browser.getStore('refseqs', function(store){
+                            var seqTrackName;
+                            if (!store) return;
+                            seqTrackName = store.config.label;
+                            if (lbl == seqTrackName) {
+                                dontLoad = true;
+                                return;
+                            }
+                            $scope.browser.publish('/jbrowse/v1/v/tracks/delete', [{label: seqTrackName}]);
+                            delete $scope.browser.config.stores['refseqs'];
+                        });
+                    }
+
+                    if (dontLoad) return;
+
+                    reloadRefSeqs(baseUrl + '/refSeqs.json').then(function(){
+                        addTrack({
+                            type:        'JBrowse/View/Track/Sequence',
+                            storeClass:  'JBrowse/Store/Sequence/StaticChunked',
+                            urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
+                            baseUrl:     baseUrl,
+                            category:    'Reference sequence',
+                            label:       lbl,
+                            chunkSize:   20000
+                        });
+                    });
+                },
+                'data:alignment:bam:': function(item) {
+                    var url = '/api/data/' + item.id + '/download/';
+                    addTrack({
                         type: 'JBrowse/View/Track/Alignments2',
                         storeClass: 'JBrowse/Store/SeqFeature/BAM',
                         category: 'NGS',
-                        // baseUrl: 'http://gendev.lan:10180/static/jbrowse/data/', // required ?
-                        urlTemplate: url + item.output.bam,
-                        baiUrlTemplate: url + item.output.bai,
-                        // store: 'store1223678765', // required ?
+                        urlTemplate: url + item.output.bam.file,
+                        baiUrlTemplate: url + item.output.bai.file,
                         key: 'BAM alignment',
-                        label: 'bam-track',
+                        label: item.static.name,
                         chunkSize: 20000
-                    };
-
-                    $scope.browser.publish('/jbrowse/v1/c/tracks/new', [track]);
+                    });
                 }
+            };
 
-//                bamTrack.urlTemplate = '/api/data/' + items[0].id + '/download/' + items[0].output.bam.file;
-//                bamTrack.baiUrlTemplate = '/api/data/' + items[0].id + '/download/' + items[0].output.bai.file;
+            if (isArray(items) && items.length > 0) {
+                if (items[0].type in genTypeHandlers) {
+                    genTypeHandlers[items[0].type](items[0]);
+                }
             }
         };
 
@@ -117,34 +187,25 @@ angular.module('jbrowse.controllers', [])
 
             // remove global menu bar
             browser.afterMilestone('initView', function() {
-//                dojo.destroy(browser.menuBar);
+                dojo.destroy(browser.menuBar);
             });
 
             // watch for table selection
             $scope.$watch('selection', selectTrack, true);
+
+            // make sure tracks detached from the view ('hidden') actually are deleted.
+            $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function(trackCfgs) {
+                $scope.browser._deleteTrackConfigs(trackCfgs);
+            });
         };
 
         // =====================================
         //      JBrowse initialization
         // =====================================
         require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json' ], function (Browser,ioQuery,JSON) {
-           // the initial configuration of this JBrowse
-           // instance
+            var config;
 
-           // NOTE: this initial config is the same as any
-           // other JBrowse config in any other file.  this
-           // one just sets defaults from URL query params.
-           // If you are embedding JBrowse in some other app,
-           // you might as well just set this initial config
-           // to something like { include: '../my/dynamic/conf.json' },
-           // or you could put the entire
-           // dynamically-generated JBrowse config here.
-
-           // parse the query vars in the page URL
-
-//            console.log(Browser.prototype._configDefaults)
-
-            // monkey-patch on fly.
+            // monkey-patch
             Browser.prototype._configDefaults = function() {
                 return {
                     tracks: [],
@@ -153,73 +214,34 @@ angular.module('jbrowse.controllers', [])
                     show_tracklist: true,
                     show_nav: true,
                     show_overview: true,
-                    refSeqs: "{dataRoot}/seq/refSeqs.json",
+                    refSeqs: [],
                     include: [],
-//                    nameUrl: "{dataRoot}/names/root.json",
-
                     datasets: {
-//                        _DEFAULT_EXAMPLES: true,
-//                        volvox:    { url: '?data=sample_data/json/volvox',    name: 'Volvox Example'    },
-//                        modencode: { url: '?data=sample_data/json/modencode', name: 'MODEncode Example' },
-//                        yeast:     { url: '?data=sample_data/json/yeast',     name: 'Yeast Example'     }
+                        _DEFAULT_EXAMPLES: false
                     },
                     highlightSearchedRegions: false,
                     highResolutionMode: 'disabled'
                 };
             };
 
-           var queryParams = ioQuery.queryToObject( window.location.search.slice(1) );
-           console.log(queryParams);//TODO: remove
-           var config = {
+            config = {
                containerID: "gen-browser",
-               include: [
-//                   '/static/jbrowse/jbrowse_conf.json',
-//                   '/static/jbrowse/jbrowse.conf'
-//                   '/api/data/537a0286fad58d7bd5ab97ce/download/trackList.json'
-               ],
                browserRoot: '/static/jbrowse',
                baseUrl: '/api/data',
-               dataRoot: '/api/data/537a0286fad58d7bd5ab97ce/download', //queryParams.data,                // TODO: data source?
-               queryParams: queryParams,                  // TODO: parameters?
-               location: queryParams.loc,                 // TODO
-               forceTracks: queryParams.tracks,
-               initialHighlight: queryParams.highlight,
-               show_nav: 1, //queryParams.nav,
-               show_tracklist: 1, //queryParams.tracklist,
-               show_overview: 1, //queryParams.overview,
-               stores: {
-                    url: {
-                        type: "JBrowse/Store/SeqFeature/FromConfig", features: []
-                    }
-               },
+               dataRoot: '/api/data',
+               refSeqs: '/static/genapp-jbrowse/refSeqs.json', // dummy refSeqs.json file
+               show_nav: true,
+               show_tracklist: false,
+               show_overview: true,
                makeFullViewURL: false,
                updateBrowserURL: false,
-               suppressUsageStatistics: true
+               suppressUsageStatistics: true,
+               include: []
            };
-
-           //if there is ?addFeatures in the query params,
-           //define a store for data from the URL
-           if(queryParams.addFeatures) {
-               config.stores.url.features = JSON.parse( queryParams.addFeatures );
-           }
-
-           // if there is ?addTracks in the query params, add
-           // those track configurations to our initial
-           // configuration
-           if(queryParams.addTracks) {
-               config.tracks = JSON.parse(queryParams.addTracks);
-           }
-
-           // if there is ?addStores in the query params, add
-           // those store configurations to our initial
-           // configuration
-           if(queryParams.addStores) {
-               config.stores = JSON.parse(queryParams.addStores);
-           }
 
            // create a JBrowse global variable holding the JBrowse instance
            $scope.browser = new Browser(config);
-           G = $scope.browser;
+//           G = $scope.browser;
            browserConnector();
         });
     }])

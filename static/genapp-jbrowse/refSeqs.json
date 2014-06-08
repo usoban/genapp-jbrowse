@@ -1,0 +1,9 @@
+[
+    {
+        "name": "none",
+        "end": 20000,
+        "start": 0,
+        "length": 20000,
+        "seqChunkSize": 20000
+    }
+]
