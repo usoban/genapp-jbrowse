@@ -95,7 +95,7 @@ angular.module('jbrowse.controllers', [])
                         lbl = item.static.name,
                         dontLoad = false;
 
-                    if ($scope.browser.config.stores/* && 'refseqs' in $scope.browser.config.stores*/) {
+                    if ($scope.browser.config.stores) {
                          $scope.browser.getStore('refseqs', function(store){
                             var seqTrackName;
                             if (!store) return;
