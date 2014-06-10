@@ -1,0 +1,196 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  config.vm.box = "gendev-17"
+
+  # The url from where the 'config.vm.box' box will be fetched if it
+  # doesn't already exist on the user's system.
+  config.vm.box_url = "https://data.genialis.com/repo/3f92c79f-888b-4655-9eda-af46a5bd9c1f/52847b7ff7667ad5e0d24e025932bbae3c564dbf/?file_name=gendev-17.box&op=download&t=76ea196c3e"
+
+  # Configure Vagrant SSH access
+  config.ssh.username = "root"
+  config.ssh.private_key_path = File.expand_path("~/.ssh/gendev_id_rsa")
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # config.vm.network :forwarded_port, guest: 80, host: 8080
+  config.vm.network :forwarded_port, guest: 22, host: 10122     # SSH
+  config.vm.network :forwarded_port, guest: 10222, host: 10222  # SSH to main-polyglot.gendev.g
+  config.vm.network :forwarded_port, guest: 5432, host: 10132   # PostgreSQL
+  config.vm.network :forwarded_port, guest: 27017, host: 10117  # MongoDB
+  config.vm.network :forwarded_port, guest: 28017, host: 10118  # MongoDB debugging REST web interface
+  config.vm.network :forwarded_port, guest: 80, host: 10180     # Nginx using uWSGI for Django web application
+  config.vm.network :forwarded_port, guest: 8000, host: 10181   # Manual Django (./manage.py runserver 0.0.0.0:8000)
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  # config.vm.network :private_network, ip: "192.168.33.10"
+
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+  # config.vm.network :public_network
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/srv/gendev_web", :owner => "genesis-web", :group => "genesis-web"
+  config.vm.synced_folder ".", "/srv/gendev_worker", :owner => "genesis-worker", :group => "genesis-worker"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  config.vm.provider :virtualbox do |vb|
+    # Don't boot with headless mode
+    # vb.gui = true
+
+    # Specify memory and CPU cores for the guest machine
+    vb.customize ["modifyvm", :id, "--memory", "2048"]
+    vb.customize ["modifyvm", :id, "--cpus", "2"]
+  end
+
+  # Provisioning using a shell script
+  $script = <<-__EOF__
+    export SRC="/srv/gendev_web/.tmp"; export DEST="/srv/gendev_data"
+
+    echo "\n[default] Patching temporary hacks..."
+    echo "gendev_web  /srv/gendev_web  vboxsf  uid=genesis-web,gid=genesis-web" | tee -a /etc/fstab
+    echo "gendev_worker  /srv/gendev_worker  vboxsf  uid=genesis-worker,gid=genesis-worker" | tee -a /etc/fstab
+    rm -rf /srv/gendev_web/static/less/
+    find /srv/gendev_web/static/ -type f -exec /bin/chmod 644 "{}" \\;
+    chsh -s /bin/sh genesis-worker
+    echo "export DJANGO_SETTINGS_MODULE=genesis.settings.gendev" | tee -a /etc/default/celeryd_gendev_worker
+
+    echo "\n[default] Upgrading and installing dependecies..."
+    # Use R 3.1.0
+    lxc-execute -n main-polyglot -- apt-get -y remove r-cran*
+    lxc-execute -n main-polyglot -- apt-get -y install python-software-properties
+    lxc-execute -n main-polyglot -- apt-key adv --keyserver keys.gnupg.net --recv-key 381BA480
+    lxc-execute -n main-polyglot -- add-apt-repository "deb http://cran.at.r-project.org/bin/linux/debian wheezy-cran3/"
+    lxc-execute -n main-polyglot -- apt-get update
+    lxc-execute -n main-polyglot -- apt-get -y install pigz r-base-core=3.1.0-1~wheezycran3.0 r-recommended=3.1.0-1~wheezycran3.0 r-base=3.1.0-1~wheezycran3.0 libopenblas-base
+
+    source /srv/gendev_venv/bin/activate
+    pip uninstall django-tastypie -y
+    pip uninstall mimeparse -y
+    pip uninstall python-mimeparse -y
+    pip uninstall python-dateutil -y
+    pip uninstall six -y
+    pip install django-tastypie==0.11.0
+    pip install slimit==0.8.1
+
+    echo "\n[default] Installing R dependencies to LXC..."
+    # lxc-execute -n main-polyglot -- Rscript --slave --no-save --no-restore-history -e "library(methods);source('http://bioconductor.org/biocLite.R');biocLite('baySeq');biocLite('DESeq');biocLite('edgeR');install.packages('snow', repos='http://cran.us.r-project.org');install.packages('rjson', repos='http://cran.us.r-project.org');install.packages('proto', repos='http://cran.us.r-project.org');install.packages('argparse', repos='http://cran.us.r-project.org')"
+
+    ################################################
+    # JBrowse
+    ################################################
+    echo "\n[default] Setting up JBrowse ...."
+
+    # Dependencies: needed to unpack and build the release
+    # need to update aptitude sources list, otherwise libdatetime-timezone-perl is not found in repo.
+
+    # auto-configure CPAN
+    (echo y; echo o conf prerequisites_policy follow; echo o conf commit) | cpan
+    # add CPAN mirror as the default search.cpan.org is down every fucking monday.
+    #perl -e "s/'urllist' => \[/'urllist' => [q[http:\/\/cpan\.sinusiks\.com\/]/" -pi ~/.cpan/CPAN/MyConfig.pm
+
+    apt-get update
+    apt-get install zip unzip
+    apt-get install -ym libpng-dev libgd2-noxpm-dev build-essential libdatetime-perl curl
+
+    # node.js for building dojo (installed via node version manager for the sake of simplicity)
+    #curl https://raw.githubusercontent.com/creationix/nvm/v0.7.0/install.sh | NVM_DIR=/opt/nvm sh
+    #source /opt/nvm/nvm.sh
+    #nvm install 0.8
+    #nvm use 0.8
+    #node -e "console.log('test')"
+
+    cd /srv
+    mkdir genome_browser
+    cd genome_browser
+
+    wget http://jbrowse.org/releases/JBrowse-1.11.3.zip
+    unzip JBrowse-1.11.3.zip
+    rm JBrowse-1.11.3.zip
+    mv JBrowse-1.11.3 jbrowse
+    cd jbrowse
+
+    #git clone --recursive https://github.com/usoban/jbrowse.git jbrowse-dev
+    #cd jbrowse-dev
+    #./setup.sh
+    #make -f build/Makefile release-min
+    #cp JBrowse-dev.zip ../ && cd ..
+    #unzip JBrowse-dev.zip
+    #mv JBrowse-dev jbrowse
+    #rm JBrowse-dev.zip
+    #cd jbrowse
+
+    ./setup.sh
+    bin/prepare-refseqs.pl --fasta docs/tutorial/data_files/volvox.fa
+
+    # sample BAM track
+    echo '
+[ tracks.my-bam-track ]
+storeClass     = JBrowse/Store/SeqFeature/BAM
+urlTemplate    = /genome-browser/sample_data/raw/volvox/volvox-sorted.bam
+baiUrlTemplate = /genome-browser/sample_data/raw/volvox/volvox-sorted.bam.bai
+category = NGS
+type = JBrowse/View/Track/Alignments2
+key  = BAM alignments from sample XYZ
+    ' > data/tracks.conf
+
+    export _NG_CFG="/etc/nginx/sites-enabled/gendev.lan"
+    ###
+    #  write the following into lines 49-51:
+    # =======================================
+    #  location /genome-browser {
+    #    alias /srv/genome_browser/jbrowse;
+    #  }
+    ###
+    sed -i '48i\ \' ${_NG_CFG}
+    sed -i '49i location /genome-browser {'                ${_NG_CFG}
+    sed -i '50i    alias /srv/genome_browser/jbrowse;'     ${_NG_CFG}
+    sed -i '51i }'                                         ${_NG_CFG}
+
+    service nginx restart
+
+    ################################################
+    # / JBrowse
+    ################################################
+
+    echo "\n[default] Migrating and restarting services..."
+    usermod -a -G genesis-worker genesis-web
+    /root/bin/gendev_web_migrate.sh
+    /etc/init.d/celeryd_gendev_worker restart
+
+    mongo gendev_data --eval 'db.trigger.dropIndex({"name": 1})'
+    mongo gendev_data --eval 'db.data.ensureIndex({"case_ids": 1}, { "backgroud": true })'
+
+    echo "\n[default] Importing data..."
+    source /srv/gendev_venv/bin/activate
+    cd '/srv/gendev_web'
+    export DJANGO_SETTINGS_MODULE='genesis.settings.gendev'
+    python manage.py loaddata .tmp/fixture.json
+    python manage.py import
+    echo
+    echo "Adding genesis-worker user and group into lxc node."
+    echo "genesis-worker:x:1003:1003::/nonexistent:/bin/false" >> /vsrv/main-polyglot12/rootfs/etc/passwd
+    echo "genesis-worker:x:1003:" >> /vsrv/main-polyglot12/rootfs/etc/group
+    echo
+    echo "[default] Done. (Remember to use 'vagrant destroy' if anything goes wrong.)"
+    exit 0
+  __EOF__
+  config.vm.provision :shell, :inline => $script
+end
