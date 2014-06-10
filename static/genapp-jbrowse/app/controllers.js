@@ -5,10 +5,15 @@
  * ===========
  */
 
+
+// CONSTANTS
+var API_DATA_URL = '/api/v1/data/';
+
+// CONTROLLERS
 angular.module('jbrowse.controllers', [])
 
     /**
-     * .. js:function:: JBrowseController(_project, $scope, $route, notify)
+     * .. js:function:: JBrowseController(Project, _project, $scope, $route)
      *
      *      **URL**: ``/``
      *
@@ -55,7 +60,7 @@ angular.module('jbrowse.controllers', [])
                     deferredSetup,
                     setupFn;
 
-                delete $scope.browser._deferred['reloadRefSeq'];
+                delete $scope.browser._deferred['reloadRefSeqs'];
                 deferredSetup = $scope.browser._getDeferred('reloadRefSeqs');
                 setupFn = function() {
                     if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length == 0) {
@@ -129,7 +134,7 @@ angular.module('jbrowse.controllers', [])
             // handlers for each data object type
             genTypeHandlers = {
                 'data:genome:fasta:': function(item){
-                    var baseUrl = '/api/data/' + item.id + '/download/seq',
+                    var baseUrl = API_DATA_URL + item.id + '/download/seq',
                         lbl = item.static.name,
                         dontLoad = false;
 
@@ -142,7 +147,8 @@ angular.module('jbrowse.controllers', [])
                                 dontLoad = true;
                                 return;
                             }
-                            $scope.browser.publish('/jbrowse/v1/v/tracks/delete', [{label: seqTrackName}]);
+                            // remove all tracks if we're changing sequence.
+                            $scope.browser.publish('/jbrowse/v1/v/tracks/delete', $scope.browser.config.tracks);
                             delete $scope.browser.config.stores['refseqs'];
                         });
                     }
@@ -162,7 +168,7 @@ angular.module('jbrowse.controllers', [])
                     });
                 },
                 'data:alignment:bam:': function(item) {
-                    var url = '/api/data/' + item.id + '/download/';
+                    var url = API_DATA_URL + item.id + '/download/';
                     addTrack({
                         type: 'JBrowse/View/Track/Alignments2',
                         storeClass: 'JBrowse/Store/SeqFeature/BAM',
@@ -261,8 +267,8 @@ angular.module('jbrowse.controllers', [])
             config = {
                containerID: "gen-browser",
                browserRoot: '/static/jbrowse',
-               baseUrl: '/api/data',
-               dataRoot: '/api/data',
+               baseUrl: API_DATA_URL,
+               dataRoot: API_DATA_URL,
                refSeqs: '/static/genapp-jbrowse/refSeqs.json', // dummy refSeqs.json file
                show_nav: true,
                show_tracklist: false,
