@@ -16,7 +16,6 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = 'server.GenUser'
-AUTHENTICATION_BACKENDS = ('genesis.backends.EmailAuthBackend',)
 
 
 ########## PATH CONFIGURATION
@@ -43,7 +42,7 @@ TIME_ZONE = 'Europe/Ljubljana'
 LANGUAGE_CODE = 'en-gb'
 SITE_ID = 1
 
-ALLOWED_HOSTS = ['.genialis.com']
+ALLOWED_HOSTS = ['.genialis.com', 'localhost']
 
 SECRET_KEY = 'gencloud%9ij3pnz%tx9&44%k=-9i7v=!ay=io$bxizl#ac6pax(^xkem^'
 
@@ -67,9 +66,7 @@ STATIC_URL = '/static/'
 ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Additional locations of static files.
-STATICFILES_DIRS = (
-    '/srv/genome_browser',
-)
+STATICFILES_DIRS = ('/srv/genome_browser',)
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -241,6 +238,7 @@ COMPRESS_JS_FILTERS = (
 ########## TASTYPIE CONFIGURATION
 TASTYPIE_DATETIME_FORMATTING = 'iso-8601'
 API_LIMIT_PER_PAGE = 0
+TASTYPIE_ABSTRACT_APIKEY = True
 
 
 ########## OTHER CONFIGURATION
@@ -253,8 +251,8 @@ LOGIN_URL = '/user/login/'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'domen@genialis.com'
-EMAIL_HOST_PASSWORD = 'Enofulhudogeslo42'
+EMAIL_HOST_USER = None  # set this in production settings
+EMAIL_HOST_PASSWORD = None  # set this in production settings
 
 FILE_UPLOAD_HANDLERS = (
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
