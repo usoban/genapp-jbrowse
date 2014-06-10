@@ -1,11 +1,49 @@
 'use strict';
-var G;
+/**
+ * ===========
+ * Controllers
+ * ===========
+ */
 
 angular.module('jbrowse.controllers', [])
-    .controller('JBrowseCtl', ['_project', '$scope', '$route', 'notify', function (_project, $scope, $route, notify) {
+
+    /**
+     * .. js:function:: JBrowseController(_project, $scope, $route, notify)
+     *
+     *      **URL**: ``/``
+     *
+     *      :param Project: :class:`Case <server.models.Case>` resource
+     *      :param _project: a deferred promise resolved before initialization for the initial case
+     *      :param $scope: Angular's scope service
+     *      :param $route: Angular's route service
+     *
+     *     Controlls JBrowse genome browser.
+     */
+    .controller('JBrowseController', ['Project', '_project', '$scope', '$route', function (Project, _project, $scope, $route) {
         var browserConnector,
             selectTrack,
             isArray;
+
+        Project.get({}, function (data) {
+            $scope.casesData = data;
+        });
+
+        // project onclick handler
+        $scope.selectProject = function(caseId) {
+            var project = _.find($scope.casesData.objects || [], function(p) {
+                if (p.id == caseId) return true;
+                return false;
+            });
+
+            if (typeof project !== 'undefined') {
+                $route.current.params.caseId = project.id;
+                $scope.project = project;
+                $scope.tableOptions.project = project;
+                $scope.tableOptions.data = 'rows';
+                $scope.tableOptions.filter = undefined;
+                $scope.tableOptions.filter = {};
+            }
+        };
 
         // Track selection handler
         selectTrack = function (items) {
@@ -29,7 +67,7 @@ angular.module('jbrowse.controllers', [])
                             value: r.name
                         });
                     });
-                    
+
                     deferredSetup.resolve(true);
                 };
 
@@ -141,6 +179,8 @@ angular.module('jbrowse.controllers', [])
             if (isArray(items) && items.length > 0) {
                 if (items[0].type in genTypeHandlers) {
                     genTypeHandlers[items[0].type](items[0]);
+                } else {
+                    console.log('No handler for type ' + items[0].type);
                 }
             }
         };
@@ -157,20 +197,14 @@ angular.module('jbrowse.controllers', [])
 //            $scope.$watch();
 //        }
 
-        // =====================================
-        //      data table helper functions
-        // =====================================
+        // Data table - intialized with the first case available
+        // (the case is resolved by router before the controller is ran)
         var preFilter = '';
         $scope.selection = [];
         $scope.project = _project;
-        $scope.genOptions = {
-            itemsByPage: 15,
-            project: $scope.project,
-            enableRowSelection: false
-        };
         $scope.tableOptions = {
             itemsByPage: 15,
-            project: _project,
+            project: $scope.project,
             genId: 'datalist-all',
             filter: preFilter,
             multiSelect: false,
@@ -179,9 +213,7 @@ angular.module('jbrowse.controllers', [])
             selectedItems: $scope.selection
         };
 
-        // =====================================
-        //      JBrowse plugin connector
-        // =====================================
+        // JBrowse connector callback.
         browserConnector = function () {
             var browser = $scope.browser;
 
@@ -193,19 +225,18 @@ angular.module('jbrowse.controllers', [])
             // watch for table selection
             $scope.$watch('selection', selectTrack, true);
 
-            // make sure tracks detached from the view ('hidden') actually are deleted.
+            // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
             $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function(trackCfgs) {
-                $scope.browser._deleteTrackConfigs(trackCfgs);
+                $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
             });
         };
 
-        // =====================================
-        //      JBrowse initialization
-        // =====================================
+        // JBrowse initialization, using dojo loader.
         require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json' ], function (Browser,ioQuery,JSON) {
             var config;
 
-            // monkey-patch
+            // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
+            // forces loading of jbrowse.conf even if we pass empty array as includes.
             Browser.prototype._configDefaults = function() {
                 return {
                     tracks: [],
@@ -224,6 +255,9 @@ angular.module('jbrowse.controllers', [])
                 };
             };
 
+            // actual JBrowse configuration.
+            // Loads dummy refseqs in the start, as JBrowse requires them. Appropriate refseqs are
+            // loaded when selecting a genome sequence track.
             config = {
                containerID: "gen-browser",
                browserRoot: '/static/jbrowse',
@@ -236,15 +270,22 @@ angular.module('jbrowse.controllers', [])
                makeFullViewURL: false,
                updateBrowserURL: false,
                suppressUsageStatistics: true,
-               include: []
+               include: [],
+                highResolutionMode: 'enabled'
            };
 
-           // create a JBrowse global variable holding the JBrowse instance
            $scope.browser = new Browser(config);
-//           G = $scope.browser;
            browserConnector();
         });
     }])
+
+    /**
+     * .. js:function:: DataPickerToggleCtl($scope)
+     *
+     *      :param $scope: Angular's scope service
+     *
+     *     Controlls toggling of data selector.
+     */
     .controller('DataPickerToggleCtl', ['$scope', function($scope) {
         $scope.isCollapsed = true;
     }])

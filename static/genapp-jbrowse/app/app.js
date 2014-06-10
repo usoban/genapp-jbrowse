@@ -1,20 +1,35 @@
 'use strict';
+/**
+ * ====
+ * App
+ * ====
+ */
 
+/**
+ * .. js:class:: jbrowse
+ *
+ *      Base app declaration. Defines the imported modules and routing.
+ *
+ *      **URLS**:
+ *
+ *      * ``/`` - :js:func:`JBrowseController`
+ *
+ */
 var jbrowse = angular.module('jbrowse', [
-    'ngRoute', 'ngGrid', 'genjs.services', 'gencloud.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers'
+    'ngRoute', 'ngGrid', 'genjs.services', 'gencloud.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers',
+    'jbrowse.services'
 ]);
 
 jbrowse.config(['$routeProvider', function ($routeProvider) {
 
-   var resolveProject = ['resolveProject', '$route', function (resolveProject, $route) {
-        $route.current.params.caseId = '537a027efad58d7bd5ab97c7'; //  hack. TODO
-       return resolveProject();
+   var resolveInitProject = ['resolveInitialProject', function (resolveInitialProject) {
+       return resolveInitialProject();
    }];
 
     $routeProvider.when('/', {
         templateUrl: '/static/genapp-jbrowse/partials/jbrowse.html',
-        controller: 'JBrowseCtl',
-        resolve: { _project: resolveProject },
+        controller: 'JBrowseController',
+        resolve: { _project: resolveInitProject },
         reloadOnSearch: false
     });
     $routeProvider.otherwise({

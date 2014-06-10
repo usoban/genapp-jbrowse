@@ -1,17 +1,41 @@
 <div class="container ng-scope jbrowse">
     <div class="row">
         <div class="col-md-12" ng-controller="DataPickerToggleCtl">
-            <button class="btn btn-default" ng-click="isCollapsed = !isCollapsed">Toggle selector</button>
+            <button class="btn btn-default" ng-click="isCollapsed = !isCollapsed">Select data</button>
             <br>
             <br>
 
             <div collapse="isCollapsed">
-                <gen-table gen-options="tableOptions">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="cases">
+                            <div class="case-list">
+                                <ul class="list-group">
+                                    <li class="list-group-item filter">
+                                        <!-- TODO: choose right fields (currently .name) or make multiple search boxes? -->
+                                        <form class="pull-right">
+                                            <label for="project-filter">Filter projects:</label>
+                                            <input id="project-filter" class="form-control" type="text" placeholder="keywords" ng-model="project_filter.$">
+                                        </form>
+                                    </li>
+                                    <li class="list-group-item case" ng-repeat="case in casesData.objects | filter:project_filter">
+                                        <div class="title"><a ng-click="selectProject(case.id);">{{case.name}} <span class="glyphicon glyphicon-chevron-right"></span></a></div>
+                                        <div class="tags-container"><label>Tags:</label> <tags tags-list="case.tags" editable="false"></tags></div>
+                                        <div class="description">{{case.description}}</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <gen-table gen-options="tableOptions">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="row gen-browser-container">
-        <div id="gen-browser" class="col-md-12" style="width: 100%; height: 100%; min-height: 500px; padding: 5px; margin: 0; border: 0;"></div>
+        <div id="gen-browser" class="col-md-12 gen-browser"></div>
     </div>
 </div>
