@@ -18,7 +18,7 @@
                                             <input id="project-filter" class="form-control" type="text" placeholder="keywords" ng-model="project_filter.$">
                                         </form>
                                     </li>
-                                    <li class="list-group-item case" ng-repeat="case in casesData.objects | filter:project_filter">
+                                    <li class="list-group-item case" ng-repeat="case in projectsData.objects | filter:project_filter">
                                         <div class="title"><a ng-click="selectProject(case.id);">{{case.name}} <span class="glyphicon glyphicon-chevron-right"></span></a></div>
                                         <div class="tags-container"><label>Tags:</label> <tags tags-list="case.tags" editable="false"></tags></div>
                                         <div class="description">{{case.description}}</div>
