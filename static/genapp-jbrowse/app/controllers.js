@@ -5,12 +5,11 @@
  * ===========
  */
 
-
 // CONSTANTS
 var API_DATA_URL = '/api/v1/data/';
 
 // CONTROLLERS
-angular.module('jbrowse.controllers', [])
+angular.module('jbrowse.controllers', ['genjs.services'])
 
     /**
      * .. js:function:: JBrowseController(Project, _project, $scope, $route)
@@ -24,18 +23,18 @@ angular.module('jbrowse.controllers', [])
      *
      *     Controlls JBrowse genome browser.
      */
-    .controller('JBrowseController', ['Project', '_project', '$scope', '$route', function (Project, _project, $scope, $route) {
+    .controller('JBrowseController', ['Project', '_project', '$scope', '$route', 'notify', function (Project, _project, $scope, $route, notify) {
         var browserConnector,
             selectTrack,
             isArray;
 
         Project.get({}, function (data) {
-            $scope.casesData = data;
+            $scope.projectsData = data;
         });
 
         // project onclick handler
         $scope.selectProject = function(caseId) {
-            var project = _.find($scope.casesData.objects || [], function(p) {
+            var project = _.find($scope.projectsData.objects || [], function(p) {
                 if (p.id == caseId) return true;
                 return false;
             });
@@ -44,15 +43,15 @@ angular.module('jbrowse.controllers', [])
                 $route.current.params.caseId = project.id;
                 $scope.project = project;
                 $scope.tableOptions.project = project;
-                $scope.tableOptions.data = 'rows';
-                $scope.tableOptions.filter = undefined;
                 $scope.tableOptions.filter = {};
             }
         };
 
         // Track selection handler
         selectTrack = function (items) {
-            var addTrack, genTypeHandlers, reloadRefSeqs;
+            var addTrack,
+                genTypeHandlers,
+                reloadRefSeqs;
 
             // reloads reference sequences
             reloadRefSeqs = function(newRefseqsUrl) {
@@ -97,13 +96,10 @@ angular.module('jbrowse.controllers', [])
             // adds track to the JBrowse
             addTrack = function(trackCfg) {
                 var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                    alreadyExists = _.find($scope.browser.config.tracks || [], function(v) {
-                        return v.label == trackCfg.label;
-                    }) !== undefined;
+                    alreadyExists = _.findWhere($scope.browser.config.tracks || [], {label: trackCfg.label}) !== undefined;
 
                 if (alreadyExists) {
-//                    notify.error('Track is already present in the viewport.');
-                    console.log('Track is already present in the viewport.');
+                    notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
                     return;
                 }
 
@@ -205,14 +201,12 @@ angular.module('jbrowse.controllers', [])
 
         // Data table - intialized with the first case available
         // (the case is resolved by router before the controller is ran)
-        var preFilter = '';
         $scope.selection = [];
         $scope.project = _project;
         $scope.tableOptions = {
             itemsByPage: 15,
             project: $scope.project,
             genId: 'datalist-all',
-            filter: preFilter,
             multiSelect: false,
             showExport: true,
             showImport: true,
@@ -221,11 +215,10 @@ angular.module('jbrowse.controllers', [])
 
         // JBrowse connector callback.
         browserConnector = function () {
-            var browser = $scope.browser;
 
             // remove global menu bar
-            browser.afterMilestone('initView', function() {
-                dojo.destroy(browser.menuBar);
+           $scope.browser.afterMilestone('initView', function() {
+                dojo.destroy($scope.browser.menuBar);
             });
 
             // watch for table selection
@@ -277,7 +270,7 @@ angular.module('jbrowse.controllers', [])
                updateBrowserURL: false,
                suppressUsageStatistics: true,
                include: [],
-                highResolutionMode: 'enabled'
+               highResolutionMode: 'enabled'
            };
 
            $scope.browser = new Browser(config);
