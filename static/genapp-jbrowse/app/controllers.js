@@ -163,8 +163,6 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                             chunkSize:   20000
                         });
                     });
-
-
                 },
                 'data:alignment:bam:': function(item) {
                     var url = API_DATA_URL + item.id + '/download/';
