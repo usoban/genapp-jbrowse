@@ -26,7 +26,8 @@ angular.module('jbrowse.controllers', ['genjs.services'])
     .controller('JBrowseController', ['Project', '_project', '$scope', '$route', 'notify', function (Project, _project, $scope, $route, notify) {
         var browserConnector,
             selectTrack,
-            isArray;
+            isArray,
+            filters;
 
         Project.get({}, function (data) {
             $scope.projectsData = data;
@@ -43,7 +44,6 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                 $route.current.params.caseId = project.id;
                 $scope.project = project;
                 $scope.tableOptions.project = project;
-                $scope.tableOptions.filter = {};
             }
         };
 
@@ -51,6 +51,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         selectTrack = function (items) {
             var addTrack,
                 genTypeHandlers,
+                filterHandlers,
                 reloadRefSeqs;
 
             // reloads reference sequences
@@ -162,6 +163,8 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                             chunkSize:   20000
                         });
                     });
+
+
                 },
                 'data:alignment:bam:': function(item) {
                     var url = API_DATA_URL + item.id + '/download/';
@@ -171,10 +174,16 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                         category: 'NGS',
                         urlTemplate: url + item.output.bam.file,
                         baiUrlTemplate: url + item.output.bai.file,
-                        key: 'BAM alignment',
                         label: item.static.name,
                         chunkSize: 20000
                     });
+                }
+            };
+            // filter actions to take in the data selector gui when some data type selected.
+            filterHandlers = {
+                'data:genome:fasta:': function() {
+                    $scope.selectionModel.restrictedMode = false;
+                    $scope.selectionModel.type = 'Other';
                 }
             };
 
@@ -183,6 +192,10 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                     genTypeHandlers[items[0].type](items[0]);
                 } else {
                     console.log('No handler for type ' + items[0].type);
+                }
+
+                if (items[0].type in filterHandlers) {
+                    filterHandlers[items[0].type]();
                 }
             }
         };
@@ -201,6 +214,17 @@ angular.module('jbrowse.controllers', ['genjs.services'])
 
         // Data table - intialized with the first case available
         // (the case is resolved by router before the controller is ran)
+        filters = {
+            'Sequence': function(obj) {
+                var showTypes = {"data:genome:fasta:": true};
+                return obj.type in showTypes;
+            },
+            'Other': function(obj){
+                var showTypes = {"data:alignment:bam:": true};
+                return obj.type in showTypes;
+            }
+        };
+
         $scope.selection = [];
         $scope.project = _project;
         $scope.tableOptions = {
@@ -210,8 +234,20 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             multiSelect: false,
             showExport: true,
             showImport: true,
-            selectedItems: $scope.selection
+            selectedItems: $scope.selection,
+            filter: filters['Sequence']
         };
+
+        // Data table pre-filters
+        $scope.selectionModel = {
+            type: 'Sequence',
+            restrictedMode: true
+        };
+        $scope.$watch('selectionModel.type', function(selectionType) {
+            if (selectionType in filters) {
+                $scope.tableOptions.filter = filters[selectionType];
+            }
+        });
 
         // JBrowse connector callback.
         browserConnector = function () {

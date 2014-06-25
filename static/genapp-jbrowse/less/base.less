@@ -10,6 +10,34 @@
     margin: 0;
     border: 0;
 }
+.padding-fix {
+  padding-top: 5px;
+  padding-bottom: 10px;
+}
+.cases .case .title {
+  font-size: 130%;
+}
+.cases .case-list .list-group {
+  height: 498px;
+  overflow-y: scroll;
+}
+.cases .case-list .case {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.cases .case-list .case-filter {
+  background-color: transparent;
+  border: none;
+  padding: 0 0 5px 0;
+}
+.cases .case-list .case-filter input {
+  width: 100%;
+}
+
+/* overriding jbrowse specialities */
+html, body {
+  overflow: visible;
+}
 /* overriding dijit theme div.container */
 div.container {
     position: static;
