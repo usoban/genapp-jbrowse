@@ -2,25 +2,39 @@
     <div class="row">
         <div class="col-md-12" ng-controller="DataPickerToggleCtl">
             <button class="btn btn-default" ng-click="isCollapsed = !isCollapsed">Select data</button>
-            <br>
-            <br>
 
             <div collapse="isCollapsed">
+                <div class="row padding-fix">
+                    <div class="col-md-6 col-md-offset-6">
+                        <div class="btn-group" data-toggle="buttons">
+                            <label tooltip-placement="top" tooltip="Selecting a new sequence track when one already present
+                                will also delete other tracks in your current view."
+                                tooltip-trigger="{{ selectionModel.restrictedMode ? 'false' : 'mouseenter'}}">
+                                <button class="btn btn-default" ng-model="selectionModel.type" btn-radio="'Sequence'">
+                                    Sequence
+                                </button>
+                            </label>
+                            <label tooltip-placement="top" tooltip="First, add a sequence track."
+                                tooltip-trigger="{{ selectionModel.restrictedMode ? 'mouseenter' : 'false'}}">
+                                <button class="btn btn-default" ng-model="selectionModel.type" btn-radio="'Other'"
+                                        ng-disabled="selectionModel.restrictedMode">
+                                    Alignment data
+                                </button>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="cases">
                             <div class="case-list">
+                                <div class="case-filter input-group">
+                                    <span class="input-group-addon">Filter project: </span>
+                                    <input id="project-filter" type="text" class="form-control" ng-model="project_filter.$" placeholder="keywords">
+                                </div>
                                 <ul class="list-group">
-                                    <li class="list-group-item filter">
-                                        <!-- TODO: choose right fields (currently .name) or make multiple search boxes? -->
-                                        <form class="pull-right">
-                                            <label for="project-filter">Filter projects:</label>
-                                            <input id="project-filter" class="form-control" type="text" placeholder="keywords" ng-model="project_filter.$">
-                                        </form>
-                                    </li>
                                     <li class="list-group-item case" ng-repeat="case in projectsData.objects | filter:project_filter">
-                                        <div class="title"><a ng-click="selectProject(case.id);">{{case.name}} <span class="glyphicon glyphicon-chevron-right"></span></a></div>
-                                        <div class="tags-container"><label>Tags:</label> <tags tags-list="case.tags" editable="false"></tags></div>
+                                        <div class="title"><a href ng-click="selectProject(case.id);">{{case.name}} <span class="glyphicon glyphicon-chevron-right"></span></a></div>
                                         <div class="description">{{case.description}}</div>
                                     </li>
                                 </ul>
