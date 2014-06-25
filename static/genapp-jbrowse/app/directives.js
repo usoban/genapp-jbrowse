@@ -2,6 +2,7 @@
 
 // CONSTANTS
 var API_DATA_URL = '/api/v1/data/';
+var GBROWSER = null;
 
 // DIRECTIVES
 angular.module('jbrowse.directives', ['genjs.services'])
@@ -16,12 +17,14 @@ angular.module('jbrowse.directives', ['genjs.services'])
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
             controller: ['$scope', 'notify', function($scope, notify){
-                var typeHandlers,
+                var self = this,
+                    typeHandlers,
                     addTrack,
                     reloadRefSeqs,
-                    connector;
+                    connector,
+                    getTrackByLabel;
 
-                // handlers for each data object type
+                // Handlers for each data object type.
                 typeHandlers = {
                     'data:genome:fasta:': function(item){
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
@@ -38,7 +41,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
-                                $scope.browser.publish('/jbrowse/v1/v/tracks/delete', $scope.browser.config.tracks);
+                                 self.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                             });
                         }
@@ -71,7 +74,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     }
                 };
 
-                // reloads reference sequences
+                // Gets JBrowse track. Searches by label.
+                getTrackByLabel = function(lbl) {
+                    return _.findWhere($scope.browser.config.tracks || [], {label: lbl});
+                };
+
+                // Reloads reference sequences.
                 reloadRefSeqs = function(newRefseqsUrl) {
                     var deferredRefSeqs,
                         deferredSetup,
@@ -111,9 +119,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     return deferredSetup;
                 };
 
+                // Adds track to JBrowse.
                 addTrack = function(trackCfg) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                        alreadyExists = _.findWhere($scope.browser.config.tracks || [], {label: trackCfg.label}) !== undefined;
+                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
 
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
@@ -140,11 +149,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         if (isSequenceTrack) {
                             $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
                         }
+
                         $scope.browser.showTracks([trackCfg.label]);
                     });
                 };
 
-                // Executes some misc. things when JBrowse intilializes
+                // Executes some misc. things when JBrowse intilializes.
                 connector = function() {
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function() {
@@ -172,8 +182,26 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
                 };
+                this.removeTracks = function(tracks) {
+                    var trackCfgs = [],
+                        t;
+                    if (_.isString(tracks)) {
+                        this.removeTracks([tracks]);
+                        return;
+                    } else if (_.isArray(tracks)) {
+                        _.each(tracks, function(trackCfg) {
+                            if (_.isString(trackCfg)) {
+                                t = getTrackByLabel(trackCfg);
+                                if (typeof t !== 'undefined') trackCfgs.push(t);
+                            } else if (_.isObject(trackCfg)) {
+                                trackCfgs.push(trackCfg);
+                            }
+                        });
+                    }
+                    $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
+                };
 
-                // JBrowse initialization
+                // JBrowse initialization.
                 require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function(Browser, ioQuery, JSON) {
                     var config = $scope.genBrowserOptions.config || { containerID: 'gen-browser' };
 
