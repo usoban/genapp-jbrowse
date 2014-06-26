@@ -36,8 +36,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         // Project onclick handler.
         $scope.selectProject = function(caseId) {
             var project = _.find($scope.projectsData.objects || [], function(p) {
-                if (p.id == caseId) return true;
-                return false;
+                return p.id == caseId;
             });
 
             if (typeof project !== 'undefined') {
@@ -67,6 +66,18 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                 $scope.tableOptions.filter = filters[selectionType];
             }
         });
+
+        // Data selector collapsing
+        $scope.isCollapsed = false;
+        $scope.collapse = function(filterType) {
+            if ($scope.selectionModel.type === filterType) {
+                $scope.isCollapsed = true;
+                $scope.selectionModel.type = '';
+            } else {
+                $scope.isCollapsed = false;
+                $scope.selectionModel.type = filterType;
+            }
+        };
 
         // Data table - intialized with the first case available
         // (the case is resolved by router before the controller is ran)

@@ -2,7 +2,6 @@
 
 // CONSTANTS
 var API_DATA_URL = '/api/v1/data/';
-var GBROWSER = null;
 
 // DIRECTIVES
 angular.module('jbrowse.directives', ['genjs.services'])
@@ -57,8 +56,13 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     typeHandlers,
                     addTrack,
                     reloadRefSeqs,
+                    preConnect,
                     connector,
                     getTrackByLabel;
+
+                this._defaults = {
+                    containerID: 'gen-browser'
+                };
 
                 // Handlers for each data object type.
                 typeHandlers = {
@@ -193,22 +197,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     });
                 };
 
-                // Executes some misc. things when JBrowse intilializes.
-                connector = function() {
-                    // remove global menu bar
-                    $scope.browser.afterMilestone('initView', function() {
-                        dojo.destroy($scope.browser.menuBar);
-                    });
-                    // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
-                    $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function(trackCfgs) {
-                        $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
-                    });
-
-                    if (_.isFunction($scope.genBrowserOptions.onConnect || {})) {
-                        $scope.genBrowserOptions.onConnect.call($scope.browser);
-                    }
-                };
-
                 // Publicly exposed API.
                 this.addTrack = function(item) {
                     if (item.type in typeHandlers) {
@@ -240,9 +228,34 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
                 };
 
+                // Execute some misc. things before we initialize JBrowse
+                preConnect = function() {
+                    var $footer,
+                        height;
+
+                    $footer = $($('footer').get(0));
+                    height = $(window).height() - $footer.height();
+                    $('#' + self._defaults['containerID']).height(height);
+                };
+                // Executes some misc. things when JBrowse intilializes.
+                connector = function() {
+                    // remove global menu bar
+                    $scope.browser.afterMilestone('initView', function() {
+                        dojo.destroy($scope.browser.menuBar);
+                    });
+                    // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
+                    $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function(trackCfgs) {
+                        $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
+                    });
+
+                    if (_.isFunction($scope.genBrowserOptions.onConnect || {})) {
+                        $scope.genBrowserOptions.onConnect.call($scope.browser);
+                    }
+                };
+
                 // JBrowse initialization.
                 require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function(Browser, ioQuery, JSON) {
-                    var config = $scope.genBrowserOptions.config || { containerID: 'gen-browser' };
+                    var config = $scope.genBrowserOptions.config || { containerID: self._defaults['containerID'] };
 
                     // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
                     // forces loading of jbrowse.conf even if we pass empty array as includes.
@@ -251,7 +264,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             containerId: 'gen-browser',
                             dataRoot: API_DATA_URL,
                             baseUrl: API_DATA_URL,
-                            browserRoot: '/static/jbrowse',
+                            browserRoot: '/static/jbrowse-1.11.4',
                             show_tracklist: false,
                             show_nav: true,
                             show_overview: true,
@@ -270,6 +283,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         };
                     };
 
+                    preConnect();
                     $scope.browser = new Browser(config);
                     connector();
                 });
