@@ -293,7 +293,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             // loaded when selecting a genome sequence track.
             config = {
                containerID: "gen-browser",
-               browserRoot: '/static/jbrowse',
+               browserRoot: '/static/jbrowse-1.11.4',
                baseUrl: API_DATA_URL,
                dataRoot: API_DATA_URL,
                refSeqs: '/static/genapp-jbrowse/refSeqs.json', // dummy refSeqs.json file
