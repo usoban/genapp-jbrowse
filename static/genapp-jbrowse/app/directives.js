@@ -9,6 +9,30 @@ angular.module('jbrowse.directives', ['genjs.services'])
     .value('version', '0.1')
 
     .directive('genBrowser', ['notify', function(notify){
+        /**
+         *  .. js::attribute:: genBrowser
+         *
+         *      :js:attr:`genBrowser` renders JBrowse genome browser
+         *
+         *      Usage example:
+         *
+         *      .. code-block:: html
+         *
+         *          <gen-browser name="browser" gen-browser-options="options">
+         *
+         *      Options varaibles:
+         *      :gen-browser-options: list of default ng-grid options with few customizations
+         *
+         *      Extra fields:
+         *      :config:        JBrowse config object.
+         *      :onConnect:     On JBrowse initialize callback.
+         *      :afterAdd:      Hash with data types as keys and callback functions as values. Callback is executed after
+         *                      given data type is added to the browser.
+         *
+         *      Name variable:
+         *      :name: name used for injecting controller into parent scope (with public API exposed)
+         */
+
         return {
             restrict: 'E',
             scope: {
@@ -17,6 +41,18 @@ angular.module('jbrowse.directives', ['genjs.services'])
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
             controller: ['$scope', 'notify', function($scope, notify){
+                /**
+                 * .. js::attribute:: JBrowse directive controller
+                 *
+                 *      Public API:
+                 *
+                 *      :js:func:`addTrack`
+                 *          :param Object item: Genesis data item.
+                 *
+                 *      :js:func:`removeTracks`
+                 *          :param Array labels: Tracks labels or track objects to delete.
+                 */
+
                 var self = this,
                     typeHandlers,
                     addTrack,
@@ -43,7 +79,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 // remove all tracks if we're changing sequence.
                                 self.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
-                                if (('refseqs' in $scope.browser._storeCache || {})) {
+                                if ('refseqs' in ($scope.browser._storeCache || {})) {
                                     delete $scope.browser._storeCache['refseqs'];
                                 }
                             });
