@@ -17,7 +17,7 @@
  */
 var jbrowse = angular.module('jbrowse', [
     'ngRoute', 'ngGrid', 'genjs.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers',
-    'jbrowse.services'
+    'jbrowse.services', 'jbrowse.directives'
 ]);
 
 jbrowse.config(['$routeProvider', function ($routeProvider) {

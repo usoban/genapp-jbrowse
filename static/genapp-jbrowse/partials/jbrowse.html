@@ -1,29 +1,25 @@
 <div class="container ng-scope jbrowse">
     <div class="row">
-        <div class="col-md-12" ng-controller="DataPickerToggleCtl">
-            <button class="btn btn-default" ng-click="isCollapsed = !isCollapsed">Select data</button>
+        <div class="col-md-12">
+            <div class="btn-group" data-toggle="buttons">
+                <label tooltip-placement="right" tooltip="Selecting a new sequence track when one already present
+                    will also delete other tracks in your current view."
+                    tooltip-trigger="{{ selectionModel.restrictedMode ? 'false' : 'mouseenter'}}">
+                    <button class="btn btn-default" ng-click="collapse('Sequence')"
+                            ng-class="{ 'active': selectionModel.type == 'Sequence' && isCollapsed == false }">
+                        Sequence
+                    </button>
+                </label>
+                <label tooltip-placement="top" tooltip="First, add a sequence track."
+                    tooltip-trigger="{{ selectionModel.restrictedMode ? 'mouseenter' : 'false'}}">
+                    <button class="btn btn-default" ng-class="{ 'active': selectionModel.type == 'Other' && isCollapsed == false }"
+                            ng-click="collapse('Other')" ng-disabled="selectionModel.restrictedMode">
+                        Alignment data
+                    </button>
+                </label>
+            </div>
 
             <div collapse="isCollapsed">
-                <div class="row padding-fix">
-                    <div class="col-md-6 col-md-offset-6">
-                        <div class="btn-group" data-toggle="buttons">
-                            <label tooltip-placement="top" tooltip="Selecting a new sequence track when one already present
-                                will also delete other tracks in your current view."
-                                tooltip-trigger="{{ selectionModel.restrictedMode ? 'false' : 'mouseenter'}}">
-                                <button class="btn btn-default" ng-model="selectionModel.type" btn-radio="'Sequence'">
-                                    Sequence
-                                </button>
-                            </label>
-                            <label tooltip-placement="top" tooltip="First, add a sequence track."
-                                tooltip-trigger="{{ selectionModel.restrictedMode ? 'mouseenter' : 'false'}}">
-                                <button class="btn btn-default" ng-model="selectionModel.type" btn-radio="'Other'"
-                                        ng-disabled="selectionModel.restrictedMode">
-                                    Alignment data
-                                </button>
-                            </label>
-                        </div>
-                    </div>
-                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="cases">
@@ -49,7 +45,5 @@
         </div>
     </div>
 
-    <div class="row gen-browser-container">
-        <div id="gen-browser" class="col-md-12 gen-browser"></div>
-    </div>
+    <gen-browser name="browser" gen-browser-options="genBrowserOptions">
 </div>
