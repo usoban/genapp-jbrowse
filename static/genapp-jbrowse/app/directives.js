@@ -99,7 +99,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 baseUrl:     baseUrl,
                                 category:    'Reference sequence',
                                 label:       lbl,
-                                chunkSize:   20000
+                                chunkSize:   200000
                             });
                         });
                     },
@@ -113,7 +113,17 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             baiUrlTemplate: url + item.output.bai.file,
                             label: item.static.name,
                             chunkSize: 20000
-                        });
+                        })
+                        .then(
+                            addTrack({
+                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                                label: item.static.name + ' Coverage',
+                                urlTemplate: url + item.output.coverage_bw.file,
+                                min_score: 0,
+                                max_score: 35
+                            })
+                        );
                     }
                 };
 
@@ -165,7 +175,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 // Adds track to JBrowse.
                 addTrack = function(trackCfg) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
+                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined,
+                        promise;
 
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
@@ -186,7 +197,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             tracks: [trackCfg]
                         }
                     });
-                    $scope.browser.loadConfig().then(function() {
+
+                    promise = $scope.browser.loadConfig();
+                    promise.then(function() {
                         // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
                         // which will be used for loading sequence chunks.
                         if (isSequenceTrack) {
@@ -195,6 +208,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         $scope.browser.showTracks([trackCfg.label]);
                     });
+
+                    return promise;
                 };
 
                 // Publicly exposed API.
