@@ -20,13 +20,8 @@ angular.module('jbrowse.controllers', ['genjs.services'])
      *     Controlls JBrowse genome browser.
      */
     .controller('JBrowseController', ['Project', '_project', '$scope', '$route', function (Project, _project, $scope, $route) {
-        var isArray,
-            filters;
+        var filters;
 
-        // Utility.
-        isArray = function (value) {
-            return Object.prototype.toString.call(value) === '[object Array]';
-        };
 
         // Fetch projects.
         Project.get({}, function (data) {
@@ -99,7 +94,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             onConnect: function () {
                 // when JBrowse is initialized, add the ability to select data in the table
                 $scope.$watch('selection', function (items) {
-                    if (!isArray(items) || items.length == 0) return;
+                    if (!_.isArray(items) || items.length == 0) return;
                     $scope.browser.addTrack(items[0]);
                 }, true);
             },
