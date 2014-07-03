@@ -105,6 +105,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     },
                     'data:alignment:bam:': function(item) {
                         var url = API_DATA_URL + item.id + '/download/';
+
                         addTrack({
                             type: 'JBrowse/View/Track/Alignments2',
                             storeClass: 'JBrowse/Store/SeqFeature/BAM',
@@ -114,16 +115,22 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             label: item.static.name,
                             chunkSize: 20000
                         })
-                        .then(
+                        .then(function () {
+                            var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
+                                return ref.substr(-3) === '.bw';
+                            });
+
+                            if (typeof bigWigFile === 'undefined') return;
+
                             addTrack({
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + item.output.coverage_bw.file,
+                                urlTemplate: url + bigWigFile,
                                 min_score: 0,
                                 max_score: 35
-                            })
-                        );
+                            });
+                        });
                     }
                 };
 
