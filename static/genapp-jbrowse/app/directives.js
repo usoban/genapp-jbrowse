@@ -83,7 +83,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 // remove all tracks if we're changing sequence.
                                 self.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
-                                delete $scope.browser._storeCache && $scope.browser._storeCache['refseqs'];
+                                if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
                             });
                         }
 
