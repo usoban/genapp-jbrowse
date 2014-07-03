@@ -34,8 +34,8 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         });
 
         // Project onclick handler.
-        $scope.selectProject = function(caseId) {
-            var project = _.find($scope.projectsData.objects || [], function(p) {
+        $scope.selectProject = function (caseId) {
+            var project = _.find($scope.projectsData.objects || [], function (p) {
                 return p.id == caseId;
             });
 
@@ -48,11 +48,11 @@ angular.module('jbrowse.controllers', ['genjs.services'])
 
         // Data table pre-filters
         filters = {
-            'Sequence': function(obj) {
+            'Sequence': function (obj) {
                 var showTypes = {"data:genome:fasta:": true};
                 return obj.type in showTypes;
             },
-            'Other': function(obj){
+            'Other': function (obj) {
                 var showTypes = {"data:alignment:bam:": true};
                 return obj.type in showTypes;
             }
@@ -61,7 +61,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             type: 'Sequence',
             restrictedMode: true
         };
-        $scope.$watch('selectionModel.type', function(selectionType) {
+        $scope.$watch('selectionModel.type', function (selectionType) {
             if (selectionType in filters) {
                 $scope.tableOptions.filter = filters[selectionType];
             }
@@ -69,7 +69,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
 
         // Data selector collapsing
         $scope.isCollapsed = false;
-        $scope.collapse = function(filterType) {
+        $scope.collapse = function (filterType) {
             if ($scope.selectionModel.type === filterType) {
                 $scope.isCollapsed = true;
                 $scope.selectionModel.type = '';
@@ -96,16 +96,16 @@ angular.module('jbrowse.controllers', ['genjs.services'])
 
         // JBrowse options
         $scope.genBrowserOptions = {
-            onConnect: function() {
+            onConnect: function () {
                 // when JBrowse is initialized, add the ability to select data in the table
-                $scope.$watch('selection', function(items) {
+                $scope.$watch('selection', function (items) {
                     if (!isArray(items) || items.length == 0) return;
                     $scope.browser.addTrack(items[0]);
                 }, true);
             },
             afterAdd: {
                 // turn off restricted mode after a FASTA sequence is added
-                'data:genome:fasta:': function() {
+                'data:genome:fasta:': function () {
                     $scope.selectionModel.restrictedMode = false;
                     $scope.selectionModel.type = 'Other';
                 }
@@ -120,7 +120,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
      *
      *     Controlls toggling of data selector.
      */
-    .controller('DataPickerToggleCtl', ['$scope', function($scope) {
+    .controller('DataPickerToggleCtl', ['$scope', function ($scope) {
         $scope.isCollapsed = true;
     }])
 ;
