@@ -97,7 +97,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 baseUrl:     baseUrl,
                                 category:    'Reference sequence',
                                 label:       lbl,
-                                chunkSize:   200000
+                                chunkSize:   2000000
                             });
                         });
                     },
