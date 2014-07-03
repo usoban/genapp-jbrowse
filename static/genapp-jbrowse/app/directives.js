@@ -17,19 +17,22 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *
          *      .. code-block:: html
          *
-         *          <gen-browser name="browser" gen-browser-options="options">
+         *          <gen-browser gen-browser-options="options">
          *
          *      Options varaibles:
-         *      :gen-browser-options: list of default ng-grid options with few customizations
+         *      :gen-browser-options: dict of JBrowse options and callbacks
          *
-         *      Extra fields:
+         *      Fields:
          *      :config:        JBrowse config object.
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
          *
-         *      Name variable:
-         *      :name: name used for injecting controller into parent scope (with public API exposed)
+         *      API:
+         *      :js:func:`addTrack`
+         *          :param Object item: Genesis data item.
+         *      :js:func:`removeTracks`
+         *          :param Array labels: Tracks labels or track objects to delete.
          */
 
         return {
@@ -40,18 +43,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
             controller: ['$scope', 'notify', function ($scope, notify) {
-                /**
-                 * .. js::attribute:: JBrowse directive controller
-                 *
-                 *      Public API:
-                 *
-                 *      :js:func:`addTrack`
-                 *          :param Object item: Genesis data item.
-                 *
-                 *      :js:func:`removeTracks`
-                 *          :param Array labels: Tracks labels or track objects to delete.
-                 */
-
                 var self = this,
                     typeHandlers,
                     addTrack,
@@ -81,7 +72,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
-                                self.removeTracks($scope.browser.config.tracks);
+                                $scope.genBrowserOptions.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
                             });
@@ -218,7 +209,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 };
 
                 // Publicly exposed API.
-                this.addTrack = function (item) {
+                $scope.genBrowserOptions.addTrack = function (item) {
                     if (item.type in typeHandlers) {
                         typeHandlers[item.type](item);
 
@@ -229,7 +220,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
                 };
-                this.removeTracks = function (tracks) {
+
+                $scope.genBrowserOptions.removeTracks = function (tracks) {
                     var trackCfgs = [],
                         t;
                     if (_.isString(tracks)) {
@@ -307,12 +299,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     $scope.browser = new Browser(config);
                     connector();
                 });
-            }],
-            link: function ($scope, $element, attrs, ctrl) {
-                var alias = attrs.name;
-                if (alias) {
-                    $scope.$parent[alias] = ctrl;
-                }
-            }
+            }]
         };
     }]);
