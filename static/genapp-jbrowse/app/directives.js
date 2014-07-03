@@ -24,6 +24,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *
          *      Fields:
          *      :config:        JBrowse config object.
+         *      :size:          Height of JBrowse window. "auto" / amount in px.
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
@@ -248,12 +249,17 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // Execute some misc. things before we initialize JBrowse
                 preConnect = function () {
-                    var $footer,
+                    var $element = $('#' + self._defaults['containerID']),
+                        $footer = $('footer').first(),
                         height;
 
-                    $footer = $('footer').first();
-                    height = $(window).height() - $footer.height();
-                    $('#' + self._defaults['containerID']).height(height);
+                    // Set fixed or automatic height
+                    if (_.isNumber($scope.genBrowserOptions.size)) {
+                        height = $scope.genBrowserOptions.size;
+                    } else {
+                        height = $(window).height() - $footer.height();
+                    }
+                    $element.height(height);
                 };
                 // Executes some misc. things when JBrowse intilializes.
                 connector = function () {
