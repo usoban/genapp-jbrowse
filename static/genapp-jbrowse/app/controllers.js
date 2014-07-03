@@ -107,15 +107,4 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             }
         };
     }])
-
-    /**
-     * .. js:function:: DataPickerToggleCtl($scope)
-     *
-     *      :param $scope: Angular's scope service
-     *
-     *     Controlls toggling of data selector.
-     */
-    .controller('DataPickerToggleCtl', ['$scope', function ($scope) {
-        $scope.isCollapsed = true;
-    }])
 ;

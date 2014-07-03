@@ -111,7 +111,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
                             label: item.static.name,
-                            chunkSize: 20000
+                            chunkSize: 2000000
                         })
                         .then(function () {
                             var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
