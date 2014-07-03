@@ -25,7 +25,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *      Extra fields:
          *      :config:        JBrowse config object.
          *      :onConnect:     On JBrowse initialize callback.
-         *      :afterAdd:      Hash with data types as keys and callback functions as values. Callback is executed after
+         *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
          *
          *      Name variable:
@@ -83,9 +83,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 // remove all tracks if we're changing sequence.
                                 self.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
-                                if ('refseqs' in ($scope.browser._storeCache || {})) {
-                                    delete $scope.browser._storeCache['refseqs'];
-                                }
+                                delete $scope.browser._storeCache && $scope.browser._storeCache['refseqs'];
                             });
                         }
 
@@ -233,7 +231,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     var $footer,
                         height;
 
-                    $footer = $($('footer').get(0));
+                    $footer = $('footer').first();
                     height = $(window).height() - $footer.height();
                     $('#' + self._defaults['containerID']).height(height);
                 };
