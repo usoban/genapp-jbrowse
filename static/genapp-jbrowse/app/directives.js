@@ -42,7 +42,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', 'notify', function ($scope, notify) {
+            controller: ['$scope', '$q', 'notify', function ($scope, $q, notify) {
                 var self = this,
                     typeHandlers,
                     addTrack,
@@ -60,35 +60,42 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     'data:genome:fasta:': function (item) {
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
                             lbl = item.static.name,
-                            dontLoad = false;
+                            purgeStoreDefer = $q.defer();
 
                         if ($scope.browser.config.stores) {
+                            // Purge refseqs store before loading new one.
                              $scope.browser.getStore('refseqs', function (store) {
                                 var seqTrackName;
-                                if (!store) return;
+                                if (!store) {
+                                    purgeStoreDefer.resolve();
+                                    return;
+                                }
                                 seqTrackName = store.config.label;
                                 if (lbl == seqTrackName) {
-                                    dontLoad = true;
+                                    purgeStoreDefer.reject();
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
                                 $scope.genBrowserOptions.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
+                                 purgeStoreDefer.resolve();
                             });
+                        } else {
+                            purgeStoreDefer.resolve();
                         }
 
-                        if (dontLoad) return;
-
-                        reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                            addTrack({
-                                type:        'JBrowse/View/Track/Sequence',
-                                storeClass:  'JBrowse/Store/Sequence/StaticChunked',
-                                urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
-                                baseUrl:     baseUrl,
-                                category:    'Reference sequence',
-                                label:       lbl,
-                                chunkSize:   2000000
+                        purgeStoreDefer.promise.then(function () {
+                            console.log('Allowed :)');
+                            reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
+                                addTrack({
+                                    type:        'JBrowse/View/Track/Sequence',
+                                    storeClass:  'JBrowse/Store/Sequence/StaticChunked',
+                                    urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
+                                    baseUrl:     baseUrl,
+                                    category:    'Reference sequence',
+                                    label:       lbl
+                                });
                             });
                         });
                     },
@@ -101,8 +108,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             category: 'NGS',
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
-                            label: item.static.name,
-                            chunkSize: 2000000
+                            label: item.static.name
                         })
                         .then(function () {
                             var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
