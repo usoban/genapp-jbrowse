@@ -84,7 +84,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         }
 
                         purgeStoreDefer.promise.then(function () {
-                            console.log('Allowed :)');
                             reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
                                 addTrack({
                                     type:        'JBrowse/View/Track/Sequence',
