@@ -17,19 +17,23 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *
          *      .. code-block:: html
          *
-         *          <gen-browser name="browser" gen-browser-options="options">
+         *          <gen-browser gen-browser-options="options">
          *
          *      Options varaibles:
-         *      :gen-browser-options: list of default ng-grid options with few customizations
+         *      :gen-browser-options: dict of JBrowse options and callbacks
          *
-         *      Extra fields:
+         *      Fields:
          *      :config:        JBrowse config object.
+         *      :size:          Height of JBrowse window. "auto" / amount in px.
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
          *
-         *      Name variable:
-         *      :name: name used for injecting controller into parent scope (with public API exposed)
+         *      API:
+         *      :js:func:`addTrack`
+         *          :param Object item: Genesis data item.
+         *      :js:func:`removeTracks`
+         *          :param Array labels: Tracks labels or track objects to delete.
          */
 
         return {
@@ -39,78 +43,85 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', 'notify', function ($scope, notify) {
-                /**
-                 * .. js::attribute:: JBrowse directive controller
-                 *
-                 *      Public API:
-                 *
-                 *      :js:func:`addTrack`
-                 *          :param Object item: Genesis data item.
-                 *
-                 *      :js:func:`removeTracks`
-                 *          :param Array labels: Tracks labels or track objects to delete.
-                 */
-
-                var self = this,
-                    typeHandlers,
+            controller: ['$scope', '$q', 'notify', 'genBrowserId', function ($scope, $q, notify, genBrowserId) {
+                var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
                     preConnect,
                     connector,
                     getTrackByLabel;
 
-                this._defaults = {
-                    containerID: 'gen-browser'
-                };
+                $scope.config = $scope.genBrowserOptions.config || { containerID: genBrowserId.generateId() };
 
                 // Handlers for each data object type.
                 typeHandlers = {
                     'data:genome:fasta:': function (item) {
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
                             lbl = item.static.name,
-                            dontLoad = false;
+                            purgeStoreDefer = $q.defer();
 
                         if ($scope.browser.config.stores) {
+                            // Purge refseqs store before loading new one.
                              $scope.browser.getStore('refseqs', function (store) {
                                 var seqTrackName;
-                                if (!store) return;
+                                if (!store) {
+                                    purgeStoreDefer.resolve();
+                                    return;
+                                }
                                 seqTrackName = store.config.label;
                                 if (lbl == seqTrackName) {
-                                    dontLoad = true;
+                                    purgeStoreDefer.reject();
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
-                                self.removeTracks($scope.browser.config.tracks);
+                                $scope.genBrowserOptions.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
+                                 purgeStoreDefer.resolve();
                             });
+                        } else {
+                            purgeStoreDefer.resolve();
                         }
 
-                        if (dontLoad) return;
-
-                        reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                            addTrack({
-                                type:        'JBrowse/View/Track/Sequence',
-                                storeClass:  'JBrowse/Store/Sequence/StaticChunked',
-                                urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
-                                baseUrl:     baseUrl,
-                                category:    'Reference sequence',
-                                label:       lbl,
-                                chunkSize:   20000
+                        purgeStoreDefer.promise.then(function () {
+                            reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
+                                addTrack({
+                                    type:        'JBrowse/View/Track/Sequence',
+                                    storeClass:  'JBrowse/Store/Sequence/StaticChunked',
+                                    urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
+                                    baseUrl:     baseUrl,
+                                    category:    'Reference sequence',
+                                    label:       lbl
+                                });
                             });
                         });
                     },
                     'data:alignment:bam:': function (item) {
                         var url = API_DATA_URL + item.id + '/download/';
+
                         addTrack({
                             type: 'JBrowse/View/Track/Alignments2',
                             storeClass: 'JBrowse/Store/SeqFeature/BAM',
                             category: 'NGS',
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
-                            label: item.static.name,
-                            chunkSize: 20000
+                            label: item.static.name
+                        })
+                        .then(function () {
+                            var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
+                                return ref.substr(-3) === '.bw';
+                            });
+
+                            if (typeof bigWigFile === 'undefined') return;
+
+                            addTrack({
+                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                                label: item.static.name + ' Coverage',
+                                urlTemplate: url + bigWigFile,
+                                min_score: 0,
+                                max_score: 35
+                            });
                         });
                     }
                 };
@@ -163,7 +174,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 // Adds track to JBrowse.
                 addTrack = function (trackCfg) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
+                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined,
+                        promise;
 
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
@@ -184,7 +196,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             tracks: [trackCfg]
                         }
                     });
-                    $scope.browser.loadConfig().then(function () {
+
+                    promise = $scope.browser.loadConfig();
+                    promise.then(function () {
                         // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
                         // which will be used for loading sequence chunks.
                         if (isSequenceTrack) {
@@ -193,10 +207,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         $scope.browser.showTracks([trackCfg.label]);
                     });
+
+                    return promise;
                 };
 
                 // Publicly exposed API.
-                this.addTrack = function (item) {
+                $scope.genBrowserOptions.addTrack = function (item) {
                     if (item.type in typeHandlers) {
                         typeHandlers[item.type](item);
 
@@ -207,7 +223,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
                 };
-                this.removeTracks = function (tracks) {
+
+                $scope.genBrowserOptions.removeTracks = function (tracks) {
                     var trackCfgs = [],
                         t;
                     if (_.isString(tracks)) {
@@ -228,12 +245,17 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // Execute some misc. things before we initialize JBrowse
                 preConnect = function () {
-                    var $footer,
+                    var $el = $('#' + $scope.config['containerID']),
+                        $footer = $('footer').first(),
                         height;
 
-                    $footer = $('footer').first();
-                    height = $(window).height() - $footer.height();
-                    $('#' + self._defaults['containerID']).height(height);
+                    // Set fixed or automatic height
+                    if (_.isNumber($scope.genBrowserOptions.size)) {
+                        height = $scope.genBrowserOptions.size;
+                    } else {
+                        height = $(window).height() - $footer.height();
+                    }
+                    $el.height(height);
                 };
                 // Executes some misc. things when JBrowse intilializes.
                 connector = function () {
@@ -253,8 +275,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // JBrowse initialization.
                 require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
-                    var config = $scope.genBrowserOptions.config || { containerID: self._defaults['containerID'] };
-
                     // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
                     // forces loading of jbrowse.conf even if we pass empty array as includes.
                     Browser.prototype._configDefaults = function () {
@@ -282,15 +302,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     };
 
                     preConnect();
-                    $scope.browser = new Browser(config);
+                    $scope.browser = new Browser($scope.config);
                     connector();
                 });
-            }],
-            link: function ($scope, $element, attrs, ctrl) {
-                var alias = attrs.name;
-                if (alias) {
-                    $scope.$parent[alias] = ctrl;
-                }
-            }
+            }]
         };
     }]);
