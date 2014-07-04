@@ -28,4 +28,20 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             return deferred.promise;
         }
     }])
+
+    /**
+     * Generates JBrowse container IDs.
+     */
+    .factory('genBrowserId', function () {
+        var browserCount = 0,
+            genBrowserId = {};
+
+        genBrowserId.generateId = function () {
+            var genId = 'gen-browser' + '-' + browserCount;
+            browserCount += 1;
+            return genId;
+        };
+
+        return genBrowserId;
+    });
 ;

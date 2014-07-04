@@ -43,18 +43,15 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', 'notify', function ($scope, $q, notify) {
-                var self = this,
-                    typeHandlers,
+            controller: ['$scope', '$q', 'notify', 'genBrowserId', function ($scope, $q, notify, genBrowserId) {
+                var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
                     preConnect,
                     connector,
                     getTrackByLabel;
 
-                this._defaults = {
-                    containerID: 'gen-browser'
-                };
+                $scope.config = $scope.genBrowserOptions.config || { containerID: genBrowserId.generateId() };
 
                 // Handlers for each data object type.
                 typeHandlers = {
@@ -249,7 +246,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // Execute some misc. things before we initialize JBrowse
                 preConnect = function () {
-                    var $element = $('#' + self._defaults['containerID']),
+                    var $el = $('#' + $scope.config['containerID']),
                         $footer = $('footer').first(),
                         height;
 
@@ -259,7 +256,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     } else {
                         height = $(window).height() - $footer.height();
                     }
-                    $element.height(height);
+                    $el.height(height);
                 };
                 // Executes some misc. things when JBrowse intilializes.
                 connector = function () {
@@ -279,8 +276,6 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // JBrowse initialization.
                 require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
-                    var config = $scope.genBrowserOptions.config || { containerID: self._defaults['containerID'] };
-
                     // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
                     // forces loading of jbrowse.conf even if we pass empty array as includes.
                     Browser.prototype._configDefaults = function () {
@@ -308,7 +303,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     };
 
                     preConnect();
-                    $scope.browser = new Browser(config);
+                    $scope.browser = new Browser($scope.config);
                     connector();
                 });
             }]
