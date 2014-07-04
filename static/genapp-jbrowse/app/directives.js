@@ -87,17 +87,16 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             });
                         }
 
-                        if (dontLoad) return;
-
-                        reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                            addTrack({
-                                type:        'JBrowse/View/Track/Sequence',
-                                storeClass:  'JBrowse/Store/Sequence/StaticChunked',
-                                urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
-                                baseUrl:     baseUrl,
-                                category:    'Reference sequence',
-                                label:       lbl,
-                                chunkSize:   20000
+                        purgeStoreDefer.promise.then(function () {
+                            reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
+                                addTrack({
+                                    type:        'JBrowse/View/Track/Sequence',
+                                    storeClass:  'JBrowse/Store/Sequence/StaticChunked',
+                                    urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
+                                    baseUrl:     baseUrl,
+                                    category:    'Reference sequence',
+                                    label:       lbl
+                                });
                             });
                         });
                     },
@@ -109,8 +108,40 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             category: 'NGS',
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
-                            label: item.static.name,
-                            chunkSize: 20000
+                            label: item.static.name
+                        })
+                        .then(function () {
+                            var bigWigFile = _.findWhere(item.output.bam.refs || [], function (ref) {
+                                return ref.substr(-3) === '.bw';
+                            });
+
+                            if (typeof bigWigFile === 'undefined') return;
+
+                            addTrack({
+                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                                label: item.static.name + ' Coverage',
+                                urlTemplate: url + bigWigFile,
+                                min_score: 0,
+                                max_score: 35
+                            });
+                        });
+                    },
+                    'data:expression:polya:': function (item) {
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bigWigFile = _.findWhere(item.output.rpkmpolya.refs || [], function (ref) {
+                                return ref.substr(-3) === '.bw';
+                            });
+
+                        if (typeof bigWigFile === 'undefined') return;
+
+                        addTrack({
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name + ' Coverage',
+                            urlTemplate: url + bigWigFile,
+                            min_score: 0,
+                            max_score: 2000
                         });
                     }
                 };

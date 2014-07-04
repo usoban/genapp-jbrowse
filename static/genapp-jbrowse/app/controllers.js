@@ -48,7 +48,7 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                 return obj.type in showTypes;
             },
             'Other': function (obj) {
-                var showTypes = {"data:alignment:bam:": true};
+                var showTypes = {"data:alignment:bam:": true, "data:expression:polya:": true};
                 return obj.type in showTypes;
             }
         };
