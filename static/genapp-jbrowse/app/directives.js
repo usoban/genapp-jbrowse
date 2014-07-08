@@ -28,6 +28,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
+         *      :browser:       Directive exposes JBrowse object after connecting
          *
          *      API:
          *      :js:func:`addTrack`
@@ -306,6 +307,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                     preConnect();
                     $scope.browser = new Browser($scope.config);
+                    $scope.genBrowserOptions.browser = $scope.browser;
                     connector();
                 });
             }]
