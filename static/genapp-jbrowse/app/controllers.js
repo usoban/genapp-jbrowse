@@ -93,10 +93,10 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         $scope.genBrowserOptions = {
             onConnect: function () {
                 // when JBrowse is initialized, add the ability to select data in the table
-                $scope.$watch('selection', function (items) {
+                $scope.$watchCollection('selection', function (items) {
                     if (!_.isArray(items) || items.length == 0) return;
                     $scope.genBrowserOptions.addTrack(items[0]);
-                }, true);
+                });
             },
             afterAdd: {
                 // turn off restricted mode after a FASTA sequence is added
