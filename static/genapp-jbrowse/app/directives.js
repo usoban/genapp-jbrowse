@@ -51,7 +51,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     connector,
                     getTrackByLabel;
 
-                $scope.config = $scope.genBrowserOptions.config || { containerID: genBrowserId.generateId() };
+                var defaultConfig = {
+                  containerID: genBrowserId.generateId()
+                };
+                $scope.config = $.extend(true, {}, defaultConfig, $scope.genBrowserOptions.config);
 
                 // Handlers for each data object type.
                 typeHandlers = {
