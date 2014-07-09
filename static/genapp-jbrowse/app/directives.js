@@ -59,7 +59,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // Handlers for each data object type.
                 typeHandlers = {
-                    'data:genome:fasta:': function (item) {
+                    'data:genome:fasta:': function (item, customTrackCfg) {
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
                             lbl = item.static.name,
                             purgeStoreDefer = $q.defer();
@@ -89,18 +89,18 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         purgeStoreDefer.promise.then(function () {
                             reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                                addTrack({
+                                addTrack($.extend({}, {
                                     type:        'JBrowse/View/Track/Sequence',
                                     storeClass:  'JBrowse/Store/Sequence/StaticChunked',
                                     urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
                                     baseUrl:     baseUrl,
                                     category:    'Reference sequence',
                                     label:       lbl
-                                });
+                                }, customTrackCfg));
                             });
                         });
                     },
-                    'data:alignment:bam:': function (item) {
+                    'data:alignment:bam:': function (item, customTrackCfg) {
                         var url = API_DATA_URL + item.id + '/download/';
 
                         addTrack({
@@ -118,14 +118,14 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                             if (typeof bigWigFile === 'undefined') return;
 
-                            addTrack({
+                            addTrack($.extend({}, {
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
                                 urlTemplate: url + bigWigFile,
                                 min_score: 0,
                                 max_score: 35
-                            });
+                            }, customTrackCfg));
                         });
                     }
                 };
@@ -216,9 +216,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 };
 
                 // Publicly exposed API.
-                $scope.genBrowserOptions.addTrack = function (item) {
+                $scope.genBrowserOptions.addTrack = function (item, customTrackCfg) {
                     if (item.type in typeHandlers) {
-                        typeHandlers[item.type](item);
+                        typeHandlers[item.type](item, customTrackCfg);
 
                         if (item.type in ($scope.genBrowserOptions.afterAdd || {})) {
                             $scope.genBrowserOptions.afterAdd[item.type].call($scope.browser);
