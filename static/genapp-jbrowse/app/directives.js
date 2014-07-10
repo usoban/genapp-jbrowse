@@ -17,10 +17,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *
          *      .. code-block:: html
          *
-         *          <gen-browser gen-browser-options="options">
+         *          <gen-browser options="options">
          *
          *      Options varaibles:
-         *      :gen-browser-options: dict of JBrowse options and callbacks
+         *      :options:       dict of JBrowse options and callbacks
          *
          *      Fields:
          *      :config:        JBrowse config object.
@@ -28,6 +28,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
+         *      :jbrowse:       Directive exposes JBrowse object after connecting
          *
          *      API:
          *      :js:func:`addTrack`
@@ -39,7 +40,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
         return {
             restrict: 'E',
             scope: {
-                genBrowserOptions: '='
+                options: '='
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
@@ -51,11 +52,14 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     connector,
                     getTrackByLabel;
 
-                $scope.config = $scope.genBrowserOptions.config || { containerID: genBrowserId.generateId() };
+                var defaultConfig = {
+                  containerID: genBrowserId.generateId()
+                };
+                $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
 
                 // Handlers for each data object type.
                 typeHandlers = {
-                    'data:genome:fasta:': function (item) {
+                    'data:genome:fasta:': function (item, customTrackCfg) {
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
                             lbl = item.static.name,
                             purgeStoreDefer = $q.defer();
@@ -74,7 +78,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
-                                $scope.genBrowserOptions.removeTracks($scope.browser.config.tracks);
+                                $scope.options.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
                                  purgeStoreDefer.resolve();
@@ -85,28 +89,31 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         purgeStoreDefer.promise.then(function () {
                             reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                                addTrack({
+                                addTrack($.extend({}, {
                                     type:        'JBrowse/View/Track/Sequence',
                                     storeClass:  'JBrowse/Store/Sequence/StaticChunked',
                                     urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
                                     baseUrl:     baseUrl,
                                     category:    'Reference sequence',
                                     label:       lbl
-                                });
+                                }, customTrackCfg));
                             });
                         });
                     },
-                    'data:alignment:bam:': function (item) {
+                    'data:alignment:bam:': function (item, customCfgArr) {
+                        var alignmentCfg = customCfgArr && customCfgArr[0];
+                        var coverageCfg = customCfgArr && customCfgArr[1];
+
                         var url = API_DATA_URL + item.id + '/download/';
 
-                        addTrack({
+                        addTrack($.extend({}, {
                             type: 'JBrowse/View/Track/Alignments2',
                             storeClass: 'JBrowse/Store/SeqFeature/BAM',
                             category: 'NGS',
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
                             label: item.static.name
-                        })
+                        }, alignmentCfg))
                         .then(function () {
                             var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
                                 return ref.substr(-3) === '.bw';
@@ -114,14 +121,14 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                             if (typeof bigWigFile === 'undefined') return;
 
-                            addTrack({
+                            addTrack($.extend({}, {
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
                                 urlTemplate: url + bigWigFile,
                                 min_score: 0,
                                 max_score: 35
-                            });
+                            }, coverageCfg));
                         });
                     }
                 };
@@ -212,19 +219,19 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 };
 
                 // Publicly exposed API.
-                $scope.genBrowserOptions.addTrack = function (item) {
+                $scope.options.addTrack = function (item, customTrackCfg) {
                     if (item.type in typeHandlers) {
-                        typeHandlers[item.type](item);
+                        typeHandlers[item.type](item, customTrackCfg);
 
-                        if (item.type in ($scope.genBrowserOptions.afterAdd || {})) {
-                            $scope.genBrowserOptions.afterAdd[item.type].call($scope.browser);
+                        if (item.type in ($scope.options.afterAdd || {})) {
+                            $scope.options.afterAdd[item.type].call($scope.browser);
                         }
                     } else {
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
                 };
 
-                $scope.genBrowserOptions.removeTracks = function (tracks) {
+                $scope.options.removeTracks = function (tracks) {
                     var trackCfgs = [],
                         t;
                     if (_.isString(tracks)) {
@@ -250,8 +257,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         height;
 
                     // Set fixed or automatic height
-                    if (_.isNumber($scope.genBrowserOptions.size)) {
-                        height = $scope.genBrowserOptions.size;
+                    if (_.isNumber($scope.options.size)) {
+                        height = $scope.options.size;
                     } else {
                         height = $(window).height() - $footer.height();
                     }
@@ -268,8 +275,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
                     });
 
-                    if (_.isFunction($scope.genBrowserOptions.onConnect || {})) {
-                        $scope.genBrowserOptions.onConnect.call($scope.browser);
+                    if (_.isFunction($scope.options.onConnect || {})) {
+                        $scope.options.onConnect.call($scope.browser);
                     }
                 };
 
@@ -303,6 +310,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                     preConnect();
                     $scope.browser = new Browser($scope.config);
+                    $scope.options.jbrowse = $scope.browser;
                     connector();
                 });
             }]
