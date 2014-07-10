@@ -100,17 +100,20 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             });
                         });
                     },
-                    'data:alignment:bam:': function (item, customTrackCfg) {
+                    'data:alignment:bam:': function (item, customCfgArr) {
+                        var alignmentCfg = customCfgArr && customCfgArr[0];
+                        var coverageCfg = customCfgArr && customCfgArr[1];
+
                         var url = API_DATA_URL + item.id + '/download/';
 
-                        addTrack({
+                        addTrack($.extend({}, {
                             type: 'JBrowse/View/Track/Alignments2',
                             storeClass: 'JBrowse/Store/SeqFeature/BAM',
                             category: 'NGS',
                             urlTemplate: url + item.output.bam.file,
                             baiUrlTemplate: url + item.output.bai.file,
                             label: item.static.name
-                        })
+                        }, alignmentCfg))
                         .then(function () {
                             var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
                                 return ref.substr(-3) === '.bw';
@@ -125,7 +128,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 urlTemplate: url + bigWigFile,
                                 min_score: 0,
                                 max_score: 35
-                            }, customTrackCfg));
+                            }, coverageCfg));
                         });
                     }
                 };
