@@ -17,10 +17,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *
          *      .. code-block:: html
          *
-         *          <gen-browser gen-browser-options="options">
+         *          <gen-browser options="options">
          *
          *      Options varaibles:
-         *      :gen-browser-options: dict of JBrowse options and callbacks
+         *      :options:       dict of JBrowse options and callbacks
          *
          *      Fields:
          *      :config:        JBrowse config object.
@@ -40,7 +40,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
         return {
             restrict: 'E',
             scope: {
-                genBrowserOptions: '='
+                options: '='
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
@@ -55,7 +55,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 var defaultConfig = {
                   containerID: genBrowserId.generateId()
                 };
-                $scope.config = $.extend(true, {}, defaultConfig, $scope.genBrowserOptions.config);
+                $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
 
                 // Handlers for each data object type.
                 typeHandlers = {
@@ -78,7 +78,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                     return;
                                 }
                                 // remove all tracks if we're changing sequence.
-                                $scope.genBrowserOptions.removeTracks($scope.browser.config.tracks);
+                                $scope.options.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
                                  purgeStoreDefer.resolve();
@@ -216,19 +216,19 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 };
 
                 // Publicly exposed API.
-                $scope.genBrowserOptions.addTrack = function (item, customTrackCfg) {
+                $scope.options.addTrack = function (item, customTrackCfg) {
                     if (item.type in typeHandlers) {
                         typeHandlers[item.type](item, customTrackCfg);
 
-                        if (item.type in ($scope.genBrowserOptions.afterAdd || {})) {
-                            $scope.genBrowserOptions.afterAdd[item.type].call($scope.browser);
+                        if (item.type in ($scope.options.afterAdd || {})) {
+                            $scope.options.afterAdd[item.type].call($scope.browser);
                         }
                     } else {
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
                 };
 
-                $scope.genBrowserOptions.removeTracks = function (tracks) {
+                $scope.options.removeTracks = function (tracks) {
                     var trackCfgs = [],
                         t;
                     if (_.isString(tracks)) {
@@ -254,8 +254,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         height;
 
                     // Set fixed or automatic height
-                    if (_.isNumber($scope.genBrowserOptions.size)) {
-                        height = $scope.genBrowserOptions.size;
+                    if (_.isNumber($scope.options.size)) {
+                        height = $scope.options.size;
                     } else {
                         height = $(window).height() - $footer.height();
                     }
@@ -272,8 +272,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
                     });
 
-                    if (_.isFunction($scope.genBrowserOptions.onConnect || {})) {
-                        $scope.genBrowserOptions.onConnect.call($scope.browser);
+                    if (_.isFunction($scope.options.onConnect || {})) {
+                        $scope.options.onConnect.call($scope.browser);
                     }
                 };
 
@@ -307,7 +307,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                     preConnect();
                     $scope.browser = new Browser($scope.config);
-                    $scope.genBrowserOptions.browser = $scope.browser;
+                    $scope.options.browser = $scope.browser;
                     connector();
                 });
             }]
