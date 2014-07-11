@@ -115,7 +115,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             label: item.static.name
                         }, alignmentCfg))
                         .then(function () {
-                            var bigWigFile = _.findWhere(item.output.bam.refs || [], function(ref){
+                            var bigWigFile = _.find(item.output.bam.refs || [], function(ref){
                                 return ref.substr(-3) === '.bw';
                             });
 
