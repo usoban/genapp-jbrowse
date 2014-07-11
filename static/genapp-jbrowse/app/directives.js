@@ -133,9 +133,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + bigWigFile,
-                                min_score: 0,
-                                max_score: 35
+                                urlTemplate: url + bigWigFile
                             }, coverageCfg));
                         });
                     },
