@@ -81,15 +81,15 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 $scope.options.removeTracks($scope.browser.config.tracks);
                                 delete $scope.browser.config.stores['refseqs'];
                                 if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
-                                 purgeStoreDefer.resolve();
+                                purgeStoreDefer.resolve();
                             });
                         } else {
                             purgeStoreDefer.resolve();
                         }
 
-                        purgeStoreDefer.promise.then(function () {
-                            reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                                addTrack($.extend({}, {
+                        return purgeStoreDefer.promise.then(function () {
+                            return reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
+                                return addTrack($.extend({}, {
                                     type:        'JBrowse/View/Track/Sequence',
                                     storeClass:  'JBrowse/Store/Sequence/StaticChunked',
                                     urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
@@ -106,7 +106,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         var url = API_DATA_URL + item.id + '/download/';
 
-                        addTrack($.extend({}, {
+                        return addTrack($.extend({}, {
                             type: 'JBrowse/View/Track/Alignments2',
                             storeClass: 'JBrowse/Store/SeqFeature/BAM',
                             category: 'NGS',
@@ -121,7 +121,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                             if (typeof bigWigFile === 'undefined') return;
 
-                            addTrack($.extend({}, {
+                            return addTrack($.extend({}, {
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
@@ -221,11 +221,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 // Publicly exposed API.
                 $scope.options.addTrack = function (item, customTrackCfg) {
                     if (item.type in typeHandlers) {
-                        typeHandlers[item.type](item, customTrackCfg);
+                        var promise = typeHandlers[item.type](item, customTrackCfg);
 
                         if (item.type in ($scope.options.afterAdd || {})) {
                             $scope.options.afterAdd[item.type].call($scope.browser);
                         }
+                        return promise;
                     } else {
                         console.log('No handler for data type ' + item.type + ' defined.');
                     }
