@@ -130,6 +130,26 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 max_score: 35
                             }, coverageCfg));
                         });
+                    },
+                    'data:variants:vcf:': function (item, customTrackCfg) {
+                        var url = API_DATA_URL + item.id + '/download/';
+                        var bgzipFile = _.find(item.output.vcf.refs || [], function(ref){
+                            var ext = '.vcf.bgz';
+                            return ref.substr(-ext.length) === ext;
+                        });
+                        var tabixFile = _.find(item.output.vcf.refs || [], function(ref){
+                            var ext = '.vcf.bgz.tbi';
+                            return ref.substr(-ext.length) === ext;
+                        });
+
+                        return addTrack($.extend({}, {
+                            type: 'JBrowse/View/Track/HTMLVariants',
+                            storeClass: 'JBrowse/Store/SeqFeature/VCFTabix',
+                            category: 'VCF',
+                            urlTemplate: url + bgzipFile,
+                            tbiUrlTemplate: url + tabixFile,
+                            label: item.static.name
+                        }, customTrackCfg));
                     }
                 };
 
