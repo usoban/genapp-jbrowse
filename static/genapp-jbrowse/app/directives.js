@@ -106,20 +106,28 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                         var url = API_DATA_URL + item.id + '/download/';
 
-                        return addTrack($.extend({}, {
-                            type: 'JBrowse/View/Track/Alignments2',
-                            storeClass: 'JBrowse/Store/SeqFeature/BAM',
-                            category: 'NGS',
-                            urlTemplate: url + item.output.bam.file,
-                            baiUrlTemplate: url + item.output.bai.file,
-                            label: item.static.name
-                        }, alignmentCfg))
-                        .then(function () {
+                        var afterTrack = $q.defer();
+                        if (!alignmentCfg.dontAdd) {
+                            addTrack($.extend({}, {
+                                type: 'JBrowse/View/Track/Alignments2',
+                                storeClass: 'JBrowse/Store/SeqFeature/BAM',
+                                category: 'NGS',
+                                urlTemplate: url + item.output.bam.file,
+                                baiUrlTemplate: url + item.output.bai.file,
+                                label: item.static.name
+                            }, alignmentCfg)).then(function () {
+                                afterTrack.resolve();
+                            })
+                        } else {
+                            afterTrack.resolve();
+                        }
+                        return afterTrack.promise.then(function () {
                             var bigWigFile = _.find(item.output.bam.refs || [], function(ref){
                                 return ref.substr(-3) === '.bw';
                             });
 
                             if (typeof bigWigFile === 'undefined') return;
+                            if (coverageCfg.dontAdd) return;
 
                             return addTrack($.extend({}, {
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
