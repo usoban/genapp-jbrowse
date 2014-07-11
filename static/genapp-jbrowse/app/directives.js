@@ -44,7 +44,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', 'notify', 'genBrowserId', function ($scope, $q, notify, genBrowserId) {
+            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', function ($scope, $q, $timeout, notify, genBrowserId) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
@@ -280,38 +280,49 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     }
                 };
 
-                // JBrowse initialization.
-                require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
-                    // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
-                    // forces loading of jbrowse.conf even if we pass empty array as includes.
-                    Browser.prototype._configDefaults = function () {
-                        return {
-                            containerId: 'gen-browser',
-                            dataRoot: API_DATA_URL,
-                            baseUrl: API_DATA_URL,
-                            browserRoot: '/static/jbrowse-1.11.4',
-                            show_tracklist: false,
-                            show_nav: true,
-                            show_overview: true,
-                            refSeqs: '/static/genapp-jbrowse/refSeqs_dummy.json',
-                            nameUrl: '/static/genapp-jbrowse/names_dummy.json',
-                            highlightSearchedRegions: false,
-                            makeFullViewURL: false,
-                            updateBrowserURL: false,
-                            highResolutionMode: 'enabled',
-                            suppressUsageStatistics: true,
-                            include: [],
-                            tracks: [],
-                            datasets: {
-                                _DEFAULT_EXAMPLES: false
-                            }
+                // Delay initialization so that element with config['containerID'] actually exists
+                $timeout(function () {
+                    // JBrowse initialization.
+                    require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
+                        // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
+                        // forces loading of jbrowse.conf even if we pass empty array as includes.
+                        Browser.prototype._configDefaults = function () {
+                            return {
+                                containerId: 'gen-browser',
+                                dataRoot: API_DATA_URL,
+                                baseUrl: API_DATA_URL,
+                                browserRoot: '/static/jbrowse-1.11.4',
+                                show_tracklist: false,
+                                show_nav: true,
+                                show_overview: true,
+                                refSeqs: '/static/genapp-jbrowse/refSeqs_dummy.json',
+                                nameUrl: '/static/genapp-jbrowse/names_dummy.json',
+                                highlightSearchedRegions: false,
+                                makeFullViewURL: false,
+                                updateBrowserURL: false,
+                                highResolutionMode: 'enabled',
+                                suppressUsageStatistics: true,
+                                include: [],
+                                tracks: [],
+                                datasets: {
+                                    _DEFAULT_EXAMPLES: false
+                                }
+                            };
                         };
-                    };
 
-                    preConnect();
-                    $scope.browser = new Browser($scope.config);
-                    $scope.options.jbrowse = $scope.browser;
-                    connector();
+                        preConnect();
+                        $scope.browser = new Browser($scope.config);
+                        $scope.options.jbrowse = $scope.browser;
+                        connector();
+                    });
+                });
+
+                // Destroy everything, otherwise jBrowse doesnt want to initialize again (unless page reloaded)
+                $scope.$on('$destroy', function () {
+                    _.each(dijit.registry.findWidgets($scope.browser.menuBar), function (w) {
+                        w.destroyRecursive();
+                    });
+                    dijit.registry.byId($scope.config['containerID']).destroyRecursive();
                 });
             }]
         };
