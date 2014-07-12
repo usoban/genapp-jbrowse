@@ -7,10 +7,10 @@ define('Genialis/View/Track/Wiggle/XYPlot', [
 
         var XYPlot = declare([WiggleXYPlotBase],
         /**
-         * Wiggle track that shows data with an X-Y plot along the reference.
+         * Overridden Wiggle XY track with non-inverted plotting when score does not reach the threshold.
          *
-         * @lends JBrowse.View.Track.Wiggle.XYPlot
-         * @extends JBrowse.View.Track.WiggleBase
+         * @lends Genialis.View.Track.Wiggle.XYPlot
+         * @extends JBrowse.View.Track.Wiggle.XYPloy
          */
         {
             /**
