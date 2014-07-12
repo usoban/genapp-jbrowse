@@ -130,12 +130,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             if (coverageCfg.dontAdd) return;
 
                             return addTrack($.extend({}, {
-                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                type: 'Genialis/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + bigWigFile,
-                                bicolor_pivot: 5,
-                                autoscale: 'local'
+                                urlTemplate: url + bigWigFile
                             }, coverageCfg));
                         });
                     },
