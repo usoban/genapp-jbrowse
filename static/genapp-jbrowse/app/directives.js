@@ -130,7 +130,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             if (coverageCfg.dontAdd) return;
 
                             return addTrack($.extend({}, {
-                                type: 'Genialis/View/Track/Wiggle/XYPlot',
+                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
                                 urlTemplate: url + bigWigFile
