@@ -50,7 +50,7 @@ define('Genialis/View/Track/Wiggle/XYPlot', [
                         if( score <= originY ) {
                             // bar goes upward
                             context.fillStyle = this.getConfForFeature('style.pos_color',f);
-                            thisB._fillRectMod( context, i, score, 1, score-dataScale.min+1);
+                            thisB._fillRectMod( context, i, score, 1, toY(dataScale.min)-score+1);
                             if( !disableClipMarkers && score < 0 ) { // draw clip marker if necessary
                                 context.fillStyle = this.getConfForFeature('style.clip_marker_color',f) || this.getConfForFeature('style.neg_color',f);
                                 thisB._fillRectMod( context, i, 0, 1, 3 );
@@ -60,7 +60,7 @@ define('Genialis/View/Track/Wiggle/XYPlot', [
                         else {
                             // bar goes downward
                             context.fillStyle = this.getConfForFeature('style.neg_color',f);
-                            thisB._fillRectMod( context, i, score, 1, score-dataScale.min+1 );
+                            thisB._fillRectMod( context, i, score, 1, toY(dataScale.min)-score+1 );
                             if( !disableClipMarkers && score >= canvasHeight ) { // draw clip marker if necessary
                                 context.fillStyle = this.getConfForFeature('style.clip_marker_color',f) || this.getConfForFeature('style.pos_color',f);
                                 thisB._fillRectMod( context, i, canvasHeight-3, 1, 3 );
