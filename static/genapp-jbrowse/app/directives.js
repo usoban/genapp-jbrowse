@@ -101,8 +101,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         });
                     },
                     'data:alignment:bam:': function (item, customCfgArr) {
-                        var alignmentCfg = customCfgArr && customCfgArr[0];
-                        var coverageCfg = customCfgArr && customCfgArr[1];
+                        var alignmentCfg = customCfgArr && customCfgArr[0] || {};
+                        var coverageCfg = customCfgArr && customCfgArr[1] || {};
 
                         var url = API_DATA_URL + item.id + '/download/';
 
@@ -311,6 +311,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 $timeout(function () {
                     // JBrowse initialization.
                     require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
+                        var genialisPlugin = {
+                            location: '/static/genapp-jbrowse/jbrowse-plugins/genialis'
+                        };
+
                         // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
                         // forces loading of jbrowse.conf even if we pass empty array as includes.
                         Browser.prototype._configDefaults = function () {
@@ -336,6 +340,11 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 }
                             };
                         };
+
+                        if (!('plugins' in $scope.config)) {
+                            $scope.config.plugins = {};
+                        }
+                        $scope.config.plugins['Genialis'] = genialisPlugin;
 
                         preConnect();
                         $scope.browser = new Browser($scope.config);
