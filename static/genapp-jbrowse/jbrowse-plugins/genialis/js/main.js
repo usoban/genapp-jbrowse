@@ -7,6 +7,6 @@ function(
    JBrowsePlugin
 ) {
     return declare( JBrowsePlugin, {
-        constructor: function() { /* dummy */ console.log('genialis plugin!'); }
+        constructor: function() { /* dummy */ }
     });
 });
