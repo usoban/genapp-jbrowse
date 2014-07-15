@@ -138,7 +138,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     },
                     'data:expression:polya:': function (item) {
                         var url = API_DATA_URL + item.id + '/download/',
-                            bigWigFile = _.findWhere(item.output.rpkmpolya.refs || [], function (ref) {
+                            bigWigFile = _.findWhere(item.output.rpkumpolya.refs || [], function (ref) {
                                 var ext = '.bw';
                                 return ref.substr(-ext.length) === ext;
                             });
@@ -148,10 +148,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         addTrack({
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
-                            label: item.static.name + ' Coverage',
+                            label: item.static.name + ' RPKUM Coverage',
                             urlTemplate: url + bigWigFile,
-                            min_score: 0,
-                            max_score: 2000
+                            autoscale: 'local'
                         });
                     },
                     'data:variants:vcf:': function (item, customTrackCfg) {
