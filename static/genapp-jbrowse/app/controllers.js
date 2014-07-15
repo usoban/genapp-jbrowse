@@ -89,14 +89,20 @@ angular.module('jbrowse.controllers', ['genjs.services'])
             filter: filters['Sequence']
         };
 
-        // JBrowse options
-        $scope.genBrowserOptions = {
+        $scope.jbrowseOptions = {
             onConnect: function () {
                 // when JBrowse is initialized, add the ability to select data in the table
-                $scope.$watch('selection', function (items) {
+                $scope.$watchCollection('selection', function (items) {
                     if (!_.isArray(items) || items.length == 0) return;
-                    $scope.genBrowserOptions.addTrack(items[0]);
-                }, true);
+                    var config = {};
+                    if (items[0].type === "data:alignment:bam:") {
+                        config = [{}, {
+                            min_score: 0,
+                            max_score: 35
+                        }];
+                    }
+                    $scope.jbrowseOptions.addTrack(items[0], config);
+                });
             },
             afterAdd: {
                 // turn off restricted mode after a FASTA sequence is added
