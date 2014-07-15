@@ -172,6 +172,21 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             tbiUrlTemplate: url + tabixFile,
                             label: item.static.name
                         }, customTrackCfg));
+                    },
+                    'data:annotation:gff3:': function(item, customTrackCfg) {
+                        var url = API_DATA_URL + item.id + '/download/';
+                        return addTrack($.extend({}, {
+                             "style" : {
+                                "className" : "feature"
+                             },
+                             "key" : "dummy",
+                             "storeClass" : "JBrowse/Store/SeqFeature/NCList",
+                             "trackType" : "CanvasFeatures",
+                             "urlTemplate" : url + "tracks/dummy/{refseq}/trackData.json",
+                             "compress" : 0,
+                             "type" : "CanvasFeatures",
+                             "label" : "dummy"
+                          }, customTrackCfg));
                     }
                 };
 
