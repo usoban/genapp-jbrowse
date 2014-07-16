@@ -101,12 +101,11 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         });
                     },
                     'data:alignment:bam:': function (item, customCfgArr) {
-                        var alignmentCfg = customCfgArr && customCfgArr[0] || {};
-                        var coverageCfg = customCfgArr && customCfgArr[1] || {};
+                        var alignmentCfg = customCfgArr && customCfgArr[0] || {},
+                            coverageCfg = customCfgArr && customCfgArr[1] || {},
+                            url = API_DATA_URL + item.id + '/download/',
+                            afterTrack = $q.defer();
 
-                        var url = API_DATA_URL + item.id + '/download/';
-
-                        var afterTrack = $q.defer();
                         if (!alignmentCfg.dontAdd) {
                             addTrack($.extend({}, {
                                 type: 'JBrowse/View/Track/Alignments2',
@@ -135,6 +134,23 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 label: item.static.name + ' Coverage',
                                 urlTemplate: url + bigWigFile
                             }, coverageCfg));
+                        });
+                    },
+                    'data:expression:polya:': function (item) {
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bigWigFile = _.findWhere(item.output.rpkumpolya.refs || [], function (ref) {
+                                var ext = '.bw';
+                                return ref.substr(-ext.length) === ext;
+                            });
+
+                        if (typeof bigWigFile === 'undefined') return;
+
+                        addTrack({
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name + ' RPKUM Coverage',
+                            urlTemplate: url + bigWigFile,
+                            autoscale: 'local'
                         });
                     },
                     'data:variants:vcf:': function (item, customTrackCfg) {
