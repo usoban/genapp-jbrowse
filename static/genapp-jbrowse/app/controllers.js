@@ -44,12 +44,16 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         // Data table pre-filters
         filters = {
             'Sequence': function (obj) {
-                var showTypes = {"data:genome:fasta:": true};
+                var showTypes = {'data:genome:fasta:': true};
                 return obj.type in showTypes;
             },
             'Other': function (obj) {
-                var showTypes = {"data:alignment:bam:": true, "data:expression:polya:": true, 'data:annotation:gff3:': true};
-                return obj.type in showTypes;
+                return obj.type in {
+                    'data:alignment:bam:':      true,
+                    'data:expression:polya:':   true,
+                    'data:variants:vcf:':       true,
+                    'data:annotation:gff3:':    true
+                };
             }
         };
         $scope.selectionModel = {

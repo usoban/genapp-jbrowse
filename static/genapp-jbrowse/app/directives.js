@@ -101,10 +101,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         });
                     },
                     'data:alignment:bam:': function (item, customCfgArr) {
-                        var alignmentCfg = customCfgArr && customCfgArr[0] || {};
-                        var coverageCfg = customCfgArr && customCfgArr[1] || {};
-                        var url = API_DATA_URL + item.id + '/download/';
-                        var afterTrack = $q.defer();
+                        var alignmentCfg = customCfgArr && customCfgArr[0] || {},
+                            coverageCfg = customCfgArr && customCfgArr[1] || {},
+                            url = API_DATA_URL + item.id + '/download/',
+                            afterTrack = $q.defer();
 
                         if (!alignmentCfg.dontAdd) {
                             addTrack($.extend({}, {
