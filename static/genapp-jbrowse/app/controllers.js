@@ -48,8 +48,12 @@ angular.module('jbrowse.controllers', ['genjs.services'])
                 return obj.type in showTypes;
             },
             'Other': function (obj) {
-                var showTypes = {'data:alignment:bam:': true, 'data:expression:polya:': true, 'data:variants:vcf:': true};
-                return obj.type in showTypes;
+                return obj.type in {
+                    'data:alignment:bam:':      true,
+                    'data:expression:polya:':   true,
+                    'data:variants:vcf:':       true,
+                    'data:annotation:gff3:':    true
+                };
             }
         };
         $scope.selectionModel = {

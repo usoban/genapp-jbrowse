@@ -172,6 +172,23 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             tbiUrlTemplate: url + tabixFile,
                             label: item.static.name
                         }, customTrackCfg));
+                    },
+                    'data:annotation:gff3:': function(item, customTrackCfg) {
+                        var url = API_DATA_URL + item.id + '/download/';
+
+                        if (!_.contains(item.output.gff.refs || [], 'tracks/gff-track')) return;
+
+                        return addTrack($.extend({}, {
+                            type : 'CanvasFeatures',
+                            storeClass: 'JBrowse/Store/SeqFeature/NCList',
+                            trackType: 'CanvasFeatures',
+                            urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
+                            label: item.static.name,
+                            compress: 0,
+                            style: {
+                                className: 'feature'
+                            }
+                          }, customTrackCfg));
                     }
                 };
 
