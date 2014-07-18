@@ -45,15 +45,16 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         filters = {
             'Sequence': function (obj) {
                 var showTypes = {'data:genome:fasta:': true};
-                return obj.type in showTypes;
+                return obj.status === 'done' && obj.type in showTypes;
             },
             'Other': function (obj) {
-                return obj.type in {
+                var showTypes = {
                     'data:alignment:bam:':      true,
                     'data:expression:polya:':   true,
                     'data:variants:vcf:':       true,
                     'data:annotation:gff3:':    true
                 };
+                return obj.status === 'done' && obj.type in showTypes;
             }
         };
         $scope.selectionModel = {
