@@ -40,4 +40,8 @@ angular.module('jbrowse', [
         // Adds a csrftoken to all http requests.
         $httpProvider.defaults.headers.common['X-CSRFToken'] = $.cookie('csrftoken');
     }])
+
+    .run(['forceTitle', function (forceTitle) {
+        forceTitle('JBrowse');
+    }])
 ;
