@@ -43,5 +43,5 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
         };
 
         return genBrowserId;
-    });
+    })
 ;
