@@ -5,7 +5,7 @@
  * ===========
  */
 
-angular.module('jbrowse.controllers', ['genjs.services'])
+angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
 
     /**
      * .. js:function:: JBrowseController(Project, _project, $scope, $route)
@@ -19,9 +19,8 @@ angular.module('jbrowse.controllers', ['genjs.services'])
      *
      *     Controlls JBrowse genome browser.
      */
-    .controller('JBrowseController', ['Project', '_project', '$scope', '$route', function (Project, _project, $scope, $route) {
+    .controller('JBrowseController', ['Project', '_project', '$scope', '$route', 'supportedTypes', function (Project, _project, $scope, $route, supportedTypes) {
         var filters;
-
 
         // Fetch projects.
         Project.get({}, function (data) {
@@ -44,17 +43,19 @@ angular.module('jbrowse.controllers', ['genjs.services'])
         // Data table pre-filters
         filters = {
             'Sequence': function (obj) {
+                // TODO: move these to supportedTypes service
                 var showTypes = {'data:genome:fasta:': true};
-                return obj.status === 'done' && obj.type in showTypes;
+                return obj.status === 'done' && obj.type in showTypes && supportedTypes.canShow(obj);
             },
             'Other': function (obj) {
+                // TODO: move these to supportedTypes service
                 var showTypes = {
                     'data:alignment:bam:':      true,
                     'data:expression:polya:':   true,
                     'data:variants:vcf:':       true,
                     'data:annotation:gff3:':    true
                 };
-                return obj.status === 'done' && obj.type in showTypes;
+                return obj.status === 'done' && obj.type in showTypes && supportedTypes.canShow(obj);
             }
         };
         $scope.selectionModel = {
