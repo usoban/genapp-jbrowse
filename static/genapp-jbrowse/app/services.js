@@ -90,34 +90,52 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
      *      }
      */
     .factory('supportedTypes', function() {
-        var api = {},
-            supported = {
-                'data:genome:fasta:': {
-                    'output.fasta.refs': [/seq/, /seq\/refSeqs\.json/]
+        var propAccessor,
+            commonPatterns,
+            canShowPatterns,
+            api = {};
+
+        commonPatterns = {
+            bigWig: /.*\.bw/,
+            exprBigWig: /.*\.tab\.bw$/,
+            vcf: /.*\.vcf\.bgz$/,
+            vcfIdx: /.*\.vcf\.bgz\.tbi$/
+        };
+
+        canShowPatterns = {
+            'data:genome:fasta:': {
+                'output.fasta.refs': [/seq/, /seq\/refSeqs\.json/]
+            },
+            'data:alignment:bam:': [
+                {
+                    'output.bam.file': /.*\.bam$/
                 },
-                'data:alignment:bam:': [
-                    {
-                        'output.bam.file': /.*\.bam$/
-                    },
-                    {
-                        'output.bai.file': /.*\.bai$/
-                    }
-                ],
-                'data:expression:polya:': {
-                    'output.rc.refs': /.*\.tab\.bw$/,
-                    'output.rcpolya.refs': /.*\.tab\.bw$/,
-                    'output.rpkm.refs': /.*\.tab\.bw$/,
-                    'output.rpkmpolya.refs': /.*\.tab\.bw$/,
-                    'output.rpkum.refs': /.*\.tab\.bw$/,
-                    'output.rpkumpolya.refs': /.*\.tab\.bw$/
-                },
-                'data:variants:vcf:': {
-                    'output.vcf.refs': [/.*\.vcf\.bgz$/, /.*\.vcf\.bgz\.tbi$/]
-                },
-                'data:annotation:gff3:': {
-                    'output.gff.refs': /tracks\/gff-track/
+                {
+                    'output.bai.file': /.*\.bai$/
                 }
-            };
+            ],
+            'data:expression:polya:': {
+                'output.rc.refs': commonPatterns['exprBigWig'],
+                'output.rcpolya.refs': commonPatterns['exprBigWig'],
+                'output.rpkm.refs': commonPatterns['exprBigWig'],
+                'output.rpkmpolya.refs': commonPatterns['exprBigWig'],
+                'output.rpkum.refs': commonPatterns['exprBigWig'],
+                'output.rpkumpolya.refs': commonPatterns['exprBigWig']
+            },
+            'data:variants:vcf:': {
+                'output.vcf.refs': [commonPatterns['vcf'], commonPatterns['vcfIdx']]
+            },
+            'data:annotation:gff3:': {
+                'output.gff.refs': /tracks\/gff-track/
+            }
+        };
+
+        // Utility function. Fetches deep object property by prop path (example prop path: output.fasta.file)
+        propAccessor = function (item, propPath) {
+            return _.reduce(propPath.split('.'), function (memo, k) {
+                return memo[k];
+            }, item);
+        };
 
         api.canShow = function(item) {
             var compute;
@@ -125,10 +143,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             compute = function (conditions, fieldName) {
                 var entries;
                 if (_.isRegExp(conditions)) {
-                    entries = _.reduce(fieldName.split('.'), function (memo, k) {
-                        return memo[k];
-                    }, item);
-
+                    entries = propAccessor(item, fieldName);
                     if (_.isArray(entries)) {
                         return _.some(entries, function (str) {
                             return conditions.test(str);
@@ -147,9 +162,19 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 }
             };
 
-            if (!(item.type in supported)) return false;
-            return compute(supported[item.type]);
+            if (!(item.type in canShowPatterns)) return false;
+            return compute(canShowPatterns[item.type]);
         };
+
+        api.find = function (item, propPath, pattern) {
+            var entries = propAccessor(item, propPath);
+            if (!_.isArray(entries)) entries = [entries];
+            return _.find(entries, function (entry) {
+                return pattern.test(entry);
+            }) || false;
+        };
+
+        api.patterns = commonPatterns;
 
         return api;
     })

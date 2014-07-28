@@ -4,7 +4,7 @@
 var API_DATA_URL = '/api/v1/data/';
 
 // DIRECTIVES
-angular.module('jbrowse.directives', ['genjs.services'])
+angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
     .value('version', '0.1')
 
     .directive('genBrowser', ['notify', function (notify) {
@@ -44,7 +44,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', function ($scope, $q, $timeout, notify, genBrowserId) {
+            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, notify, genBrowserId, supportedTypes) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
@@ -121,11 +121,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             afterTrack.resolve();
                         }
                         return afterTrack.promise.then(function () {
-                            var bigWigFile = _.find(item.output.bam.refs || [], function(ref){
-                                return ref.substr(-3) === '.bw';
-                            });
+                            var bigWigFile = supportedTypes.find(item, 'output.bam.refs', supportedTypes.patterns['bigWig']);
 
-                            if (typeof bigWigFile === 'undefined') return;
+                            if (!bigWigFile) return;
                             if (coverageCfg.dontAdd) return;
 
                             return addTrack($.extend({}, {
@@ -138,12 +136,9 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     },
                     'data:expression:polya:': function (item) {
                         var url = API_DATA_URL + item.id + '/download/',
-                            bigWigFile = _.findWhere(item.output.rpkumpolya.refs || [], function (ref) {
-                                var ext = '.bw';
-                                return ref.substr(-ext.length) === ext;
-                            });
+                            bigWigFile = supportedTypes.find(item, 'output.rpkumpolya.refs', supportedTypes.patterns['bigWig'])
 
-                        if (typeof bigWigFile === 'undefined') return;
+                        if (!bigWigFile) return;
 
                         addTrack({
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
@@ -154,15 +149,11 @@ angular.module('jbrowse.directives', ['genjs.services'])
                         });
                     },
                     'data:variants:vcf:': function (item, customTrackCfg) {
-                        var url = API_DATA_URL + item.id + '/download/';
-                        var bgzipFile = _.find(item.output.vcf.refs || [], function(ref){
-                            var ext = '.vcf.bgz';
-                            return ref.substr(-ext.length) === ext;
-                        });
-                        var tabixFile = _.find(item.output.vcf.refs || [], function(ref){
-                            var ext = '.vcf.bgz.tbi';
-                            return ref.substr(-ext.length) === ext;
-                        });
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bgzipFile = supportedTypes.find(item, 'output.vcf.refs', supportedTypes.patterns['vcf']),
+                            tabixFile = supportedTypes.find(item, 'output.vcf.refs', supportedTypes.patterns['vcfIdx']);
+
+                        if (!(bgzipFile && tabixFile)) return;
 
                         return addTrack($.extend({}, {
                             type: 'JBrowse/View/Track/HTMLVariants',
