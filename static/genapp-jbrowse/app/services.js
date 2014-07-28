@@ -123,40 +123,28 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             var compute;
 
             compute = function (conditions, fieldName) {
-                var truth, props, tmp, i;
+                var entries;
                 if (_.isRegExp(conditions)) {
-                    props = fieldName.split('.');
-                    if (props.length > 0) {
-                        tmp = item;
-                        for (i = 0; i < props.length; i++) {
-                            tmp = tmp[props[i]];
-                        }
+                    entries = _.reduce(fieldName.split('.'), function (memo, k) {
+                        return memo[k];
+                    }, item);
 
-                        if (_.isArray(tmp)) {
-                            truth = _.some(tmp, function (str) {
-                                return conditions.test(str);
-                            });
-                        } else if (_.isString(tmp)) {
-                            truth = conditions.test(tmp);
-                        }
-                    } else {
-                        truth = false;
+                    if (_.isArray(entries)) {
+                        return _.some(entries, function (str) {
+                            return conditions.test(str);
+                        });
+                    } else if (_.isString(entries)) {
+                        return conditions.test(entries);
                     }
                 } else if (_.isArray(conditions)) {
-                    truth = _.every(conditions, function (arrItem) {
+                    return _.every(conditions, function (arrItem) {
                         return compute(arrItem, fieldName);
                     });
                 } else if (_.isObject(conditions)) {
-                    truth = _.some(conditions, function (dictItem, dictKey) {
+                    return _.some(conditions, function (dictItem, dictKey) {
                         return compute(dictItem, dictKey);
                     });
                 }
-                else {
-                    console.log('wrong!');
-                    console.log(fieldName);
-                    console.log(conditions);
-                }
-                return truth;
             };
 
             if (!(item.type in supported)) return false;
