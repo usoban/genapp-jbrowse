@@ -43,19 +43,10 @@ angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
         // Data table pre-filters
         filters = {
             'Sequence': function (obj) {
-                // TODO: move these to supportedTypes service
-                var showTypes = {'data:genome:fasta:': true};
-                return obj.status === 'done' && obj.type in showTypes && supportedTypes.canShow(obj);
+                return supportedTypes.canShow(obj, 'Sequence');
             },
             'Other': function (obj) {
-                // TODO: move these to supportedTypes service
-                var showTypes = {
-                    'data:alignment:bam:':      true,
-                    'data:expression:polya:':   true,
-                    'data:variants:vcf:':       true,
-                    'data:annotation:gff3:':    true
-                };
-                return obj.status === 'done' && obj.type in showTypes && supportedTypes.canShow(obj);
+                return supportedTypes.canShow(obj, 'Other');
             }
         };
         $scope.selectionModel = {
