@@ -95,7 +95,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                     urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
                                     baseUrl:     baseUrl,
                                     category:    'Reference sequence',
-                                    label:       lbl
+                                    label:       lbl,
+                                    showTranslation: false
                                 }, customTrackCfg));
                             });
                         });
