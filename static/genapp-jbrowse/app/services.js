@@ -58,8 +58,8 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
      *      and output.bai.file to contain a file with .bai extension in order to declare given data item as supported.
      *
      *      'data:alignment:bam:': [
-     *          {'output.bam.file': /.*\.bam$/},
-     *          {'output.bai.file': /.*\.bai$/}
+     *          {'output.bam.file': /\.bam$/i},
+     *          {'output.bai.file': /\.bai$/i}
      *      ]
      *
      *  Conjunction over multiple values of a single field:
@@ -67,15 +67,15 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
      *      contain two files (both must be present at the same time):
      *
      *      'data:variants:vcf:': {
-     *          'output.vcf.refs': [/.*\.vcf\.bgz$/, /.*\.vcf\.bgz\.tbi$/]
+     *          'output.vcf.refs': [/\.vcf\.bgz$/i, /\.vcf\.bgz\.tbi$/i]
      *      }
      *
      *  Disjunction over multiple fields:
      *      If we want to check whether at least one field suffices our condition, we can simply make a disjunction:
 
      *      'data:expression:polya:': {
-     *          'output.rpkumpolya.refs': /.*\.bw/,
-     *          'output.rpkmpolya.refs': /.*\.bw/,
+     *          'output.rpkumpolya.refs': /\.bw/,
+     *          'output.rpkmpolya.refs': /\.bw/,
      *          ............
      *      }
      *
@@ -84,8 +84,8 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
      *      both ".tab" file and ".bw" file.
      *
      *      'data:expression:polya:': {
-     *          'output.rpkumpolya.refs': [/.*\.tab/, /.*\.bw/],
-     *          'output.rpkmpolya.refs': [/.*\.tab/, /.*\.bw/],
+     *          'output.rpkumpolya.refs': [/\.tab/, /\.bw/],
+     *          'output.rpkmpolya.refs': [/\.tab/, /\.bw/],
      *          ............
      *      }
      */
@@ -110,22 +110,22 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
         };
 
         commonPatterns = {
-            bigWig: /.*\.bw/,
-            exprBigWig: /.*\.tab\.bw$/,
-            vcf: /.*\.vcf\.bgz$/,
-            vcfIdx: /.*\.vcf\.bgz\.tbi$/
+            bigWig: /\.bw$/i,
+            exprBigWig: /\.tab\.bw$/i,
+            vcf: /\.vcf\.bgz$/i,
+            vcfIdx: /\.vcf\.bgz\.tbi$/i
         };
 
         canShowPatterns = {
             'data:genome:fasta:': {
-                'output.fasta.refs': [/seq/, /seq\/refSeqs\.json/]
+                'output.fasta.refs': [/^seq$/, /^seq\/refSeqs\.json$/]
             },
             'data:alignment:bam:': [
                 {
-                    'output.bam.file': /.*\.bam$/
+                    'output.bam.file': /\.bam$/i
                 },
                 {
-                    'output.bai.file': /.*\.bai$/
+                    'output.bai.file': /\.bai$/i
                 }
             ],
             'data:expression:polya:': {
@@ -140,7 +140,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'output.vcf.refs': [commonPatterns['vcf'], commonPatterns['vcfIdx']]
             },
             'data:annotation:gff3:': {
-                'output.gff.refs': /tracks\/gff-track/
+                'output.gff.refs': /^tracks\/gff-track$/
             }
         };
 
