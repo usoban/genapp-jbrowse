@@ -90,8 +90,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
      *      }
      */
     .factory('supportedTypes', function() {
-        var propAccessor,
-            commonPatterns,
+        var commonPatterns,
             canShowPatterns,
             organization,
             api = {};
@@ -144,13 +143,6 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             }
         };
 
-        // Utility function. Fetches deep object property by prop path (example prop path: output.fasta.file)
-        propAccessor = function (item, propPath) {
-            return _.reduce(propPath.split('.'), function (memo, k) {
-                return memo[k];
-            }, item);
-        };
-
         // Tells whether given item can be shown in data selector (in given selection mode, e.g. 'Sequence' or 'Other')
         api.canShow = function(item, selectionMode) {
             var compute;
@@ -158,22 +150,15 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             compute = function (conditions, fieldName) {
                 var entries;
                 if (_.isRegExp(conditions)) {
-                    entries = propAccessor(item, fieldName);
-                    if (_.isArray(entries)) {
-                        return _.some(entries, function (str) {
-                            return conditions.test(str);
-                        });
-                    } else if (_.isString(entries)) {
-                        return conditions.test(entries);
-                    }
+                    entries = _.path(item, fieldName);
+                    if (!_.isArray(entries)) entries = [entries];
+                    return _.some(entries, RegExp.test, conditions);
                 } else if (_.isArray(conditions)) {
                     return _.every(conditions, function (arrItem) {
                         return compute(arrItem, fieldName);
                     });
                 } else if (_.isObject(conditions)) {
-                    return _.some(conditions, function (dictItem, dictKey) {
-                        return compute(dictItem, dictKey);
-                    });
+                    return _.some(conditions, compute);
                 }
             };
 
@@ -185,11 +170,9 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
         };
 
         api.find = function (item, propPath, pattern) {
-            var entries = propAccessor(item, propPath);
+            var entries = _.path(item, propPath);
             if (!_.isArray(entries)) entries = [entries];
-            return _.find(entries, function (entry) {
-                return pattern.test(entry);
-            }) || false;
+            return _.find(entries, RegExp.test, pattern) || false;
         };
 
         api.patterns = commonPatterns;
