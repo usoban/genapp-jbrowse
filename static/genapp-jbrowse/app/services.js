@@ -172,7 +172,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
         api.find = function (item, propPath, pattern) {
             var entries = _.path(item, propPath);
             if (!_.isArray(entries)) entries = [entries];
-            return _.find(entries, RegExp.test, pattern) || false;
+            return _.find(entries, _.bind(pattern.test, pattern)) || false;
         };
 
         api.patterns = commonPatterns;
