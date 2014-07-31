@@ -152,7 +152,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 if (_.isRegExp(conditions)) {
                     entries = _.path(item, fieldName);
                     if (!_.isArray(entries)) entries = [entries];
-                    return _.some(entries, RegExp.test, conditions);
+                    return _.some(entries, _.bind(conditions.test, conditions));
                 } else if (_.isArray(conditions)) {
                     return _.every(conditions, function (arrItem) {
                         return compute(arrItem, fieldName);
