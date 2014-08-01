@@ -50,7 +50,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     reloadRefSeqs,
                     preConnect,
                     connector,
+                    escUrl,
                     getTrackByLabel;
+
+                escUrl = function (url) {
+                    return encodeURIComponent(url.replace(/[/]/g, '\\'));
+                };
 
                 var defaultConfig = {
                   containerID: genBrowserId.generateId()
@@ -111,12 +116,12 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 type: 'JBrowse/View/Track/Alignments2',
                                 storeClass: 'JBrowse/Store/SeqFeature/BAM',
                                 category: 'NGS',
-                                urlTemplate: url + item.output.bam.file,
-                                baiUrlTemplate: url + item.output.bai.file,
+                                urlTemplate: url + escUrl(item.output.bam.file),
+                                baiUrlTemplate: url + escUrl(item.output.bai.file),
                                 label: item.static.name
                             }, alignmentCfg)).then(function () {
                                 afterTrack.resolve();
-                            })
+                            });
                         } else {
                             afterTrack.resolve();
                         }
@@ -132,7 +137,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + bigWigFile
+                                urlTemplate: url + escUrl(bigWigFile)
                             }, coverageCfg));
                         });
                     },
@@ -149,7 +154,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name + ' RPKUM Coverage',
-                            urlTemplate: url + bigWigFile,
+                            urlTemplate: url + escUrl(bigWigFile),
                             autoscale: 'local'
                         });
                     },
@@ -168,8 +173,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             type: 'JBrowse/View/Track/HTMLVariants',
                             storeClass: 'JBrowse/Store/SeqFeature/VCFTabix',
                             category: 'VCF',
-                            urlTemplate: url + bgzipFile,
-                            tbiUrlTemplate: url + tabixFile,
+                            urlTemplate: url + escUrl(bgzipFile),
+                            tbiUrlTemplate: url + escUrl(tabixFile),
                             label: item.static.name
                         }, customTrackCfg));
                     },
