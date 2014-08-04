@@ -54,7 +54,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     getTrackByLabel;
 
                 escUrl = function (url) {
-                    return encodeURIComponent(url.replace(/[/]/g, '\\'));
+                    return encodeURIComponent(url);
                 };
 
                 var defaultConfig = {
