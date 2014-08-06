@@ -44,18 +44,15 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', function ($scope, $q, $timeout, notify, genBrowserId) {
+            controller: ['$scope', '$q', '$timeout', '$filter', 'notify', 'genBrowserId', function ($scope, $q, $timeout, $filter, notify, genBrowserId) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
                     preConnect,
                     connector,
-                    escUrl,
                     getTrackByLabel;
 
-                escUrl = function (url) {
-                    return encodeURIComponent(url);
-                };
+                var escUrl = $filter('escape');
 
                 var defaultConfig = {
                   containerID: genBrowserId.generateId()
