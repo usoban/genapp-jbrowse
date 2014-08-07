@@ -198,6 +198,20 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                                 className: 'feature'
                             }
                           }, customTrackCfg));
+                    },
+                    'data:mappability:bcm:': function (item, customTrackCfg) {
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bwFile = supportedTypes.find(item, 'output.mappability.refs', supportedTypes.patterns['exprBigWig']);
+
+                        if (!bwFile) return;
+
+                        return addTrack($.extend({}, {
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name + ' Coverage',
+                            urlTemplate: url + bwFile,
+                            autoscale: 'local'
+                        }, customTrackCfg));
                     }
                 };
 
