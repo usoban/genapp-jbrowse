@@ -380,10 +380,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
 
                 // Destroy everything, otherwise jBrowse doesnt want to initialize again (unless page reloaded)
                 $scope.$on('$destroy', function () {
-                    _.each(dijit.registry.findWidgets($scope.browser.menuBar), function (w) {
-                        w.destroyRecursive();
+                    _.each(dijit.registry.toArray(), function (e) {
+                        var r = e.id && dijit.registry.byId(e.id);
+                        r && r.destroy();
                     });
-                    dijit.registry.byId($scope.config['containerID']).destroyRecursive();
                 });
             }]
         };
