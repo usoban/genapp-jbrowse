@@ -106,7 +106,8 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'data:variants:vcf:': true,
                 'data:annotation:gff3:': true,
                 'data:mappability:bcm:': true,
-                'data:bigwig:mappability:': true
+                'data:bigwig:mappability:': true,
+                'data:annotation:gtf:': true
             }
         };
 
@@ -114,7 +115,8 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             bigWig: /\.bw$/i,
             exprBigWig: /\.tab\.bw$/i,
             vcf: /\.vcf\.bgz$/i,
-            vcfIdx: /\.vcf\.bgz\.tbi$/i
+            vcfIdx: /\.vcf\.bgz\.tbi$/i,
+            gff: /^tracks\/gff-track$/
         };
 
         canShowPatterns = {
@@ -141,7 +143,10 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'output.vcf.refs': [commonPatterns['vcf'], commonPatterns['vcfIdx']]
             },
             'data:annotation:gff3:': {
-                'output.gff.refs': /^tracks\/gff-track$/
+                'output.gff.refs': commonPatterns['gff']
+            },
+            'data:annotation:gtf:': {
+                'output.gtf.refs': commonPatterns['gff']
             },
             'data:mappability:bcm:': {
                 'output.mappability.refs': commonPatterns['exprBigWig']
