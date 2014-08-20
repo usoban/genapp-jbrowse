@@ -105,8 +105,9 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'data:expression:polya:': true,
                 'data:variants:vcf:': true,
                 'data:annotation:gff3:': true,
-                'data:annotation:gtf:': true,
-                'data:mappability:bcm:': true
+                'data:mappability:bcm:': true,
+                'data:bigwig:mappability:': true,
+                'data:annotation:gtf:': true
             }
         };
 
@@ -149,6 +150,9 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
             },
             'data:mappability:bcm:': {
                 'output.mappability.refs': commonPatterns['exprBigWig']
+            },
+            'data:bigwig:mappability:': {
+                'output.bigwig.file': commonPatterns['bigWig']
             }
         };
 
