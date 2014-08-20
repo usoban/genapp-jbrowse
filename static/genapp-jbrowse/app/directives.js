@@ -212,6 +212,15 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             urlTemplate: url + bwFile,
                             autoscale: 'local'
                         }, customTrackCfg));
+                    },
+                    'data:bigwig:mappability:': function (item, customTrackCfg) {
+                        addTrack($.extend({}, {
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name,
+                            urlTemplate: API_DATA_URL + item.id + '/download/' + item.output.bigwig.file,
+                            autoscale: 'local'
+                        }, customTrackCfg));
                     }
                 };
 
