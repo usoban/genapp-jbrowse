@@ -154,7 +154,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     },
                     'data:expression:polya:': function (item) {
                         var url = API_DATA_URL + item.id + '/download/',
-                            bigWigFile = supportedTypes.find(item, 'output.rpkumpolya.refs', supportedTypes.patterns['bigWig'])
+                            bigWigFile = supportedTypes.find(item, 'output.rpkumpolya.refs', supportedTypes.patterns['bigWig']);
 
                         if (!bigWigFile) return;
 
@@ -186,6 +186,23 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         var url = API_DATA_URL + item.id + '/download/';
 
                         if (!_.contains(item.output.gff.refs || [], 'tracks/gff-track')) return;
+
+                        return addTrack($.extend({}, {
+                            type : 'CanvasFeatures',
+                            storeClass: 'JBrowse/Store/SeqFeature/NCList',
+                            trackType: 'CanvasFeatures',
+                            urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
+                            label: item.static.name,
+                            compress: 0,
+                            style: {
+                                className: 'feature'
+                            }
+                          }, customTrackCfg));
+                    },
+                    'data:annotation:gtf:': function(item, customTrackCfg) {
+                        var url = API_DATA_URL + item.id + '/download/';
+
+                        if (!_.contains(item.output.gtf.refs || [], 'tracks/gff-track')) return;
 
                         return addTrack($.extend({}, {
                             type : 'CanvasFeatures',
