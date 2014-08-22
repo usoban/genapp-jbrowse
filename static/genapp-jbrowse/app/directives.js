@@ -193,11 +193,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type : 'CanvasFeatures',
                             storeClass: 'JBrowse/Store/SeqFeature/NCList',
                             trackType: 'CanvasFeatures',
+                            glyph: 'JBrowse/View/FeatureGlyph/Segments',
+                            subParts: 'match_part',
                             urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
                             label: item.static.name,
                             compress: 0,
+                            maxHeight: 3000,
                             style: {
-                                className: 'feature'
+                                _defaultLabelScale: 1
                             }
                           }, customTrackCfg));
                     },
