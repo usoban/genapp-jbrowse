@@ -190,17 +190,31 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         if (!_.contains(item.output.gff.refs || [], 'tracks/gff-track')) return;
 
                         return addTrack($.extend({}, {
-                            type : 'CanvasFeatures',
                             storeClass: 'JBrowse/Store/SeqFeature/NCList',
-                            trackType: 'CanvasFeatures',
-                            glyph: 'JBrowse/View/FeatureGlyph/Segments',
+                            type: 'Genialis/View/Track/CanvasFeatures',
+                            glyph: 'Genialis/View/FeatureGlyph/Segments',
                             subParts: 'match_part',
                             urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
                             label: item.static.name,
                             compress: 0,
                             maxHeight: 3000,
                             style: {
-                                _defaultLabelScale: 1
+                                _defaultLabelScale: 1,
+                                className: 'generic_parent',
+                                color: function (feature, varName, glyphObj, track) {
+                                    var q = feature[7];
+                                    if (q >= 200) {
+                                        return '#ff0033';
+                                    } else if (q > 80) {
+                                        return '#ff00ff';
+                                    } else if (q >= 50) {
+                                        return '#33ff00';
+                                    } else if (q >= 40) {
+                                        return '#3300ff';
+                                    } else {
+                                        return '#000000';
+                                    }
+                                }
                             }
                           }, customTrackCfg));
                     },
