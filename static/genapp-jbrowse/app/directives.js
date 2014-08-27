@@ -111,7 +111,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                             label: item.static.name + ' GC Window',
-                                            urlTemplate: API_DATA_URL + item.id + '/download/' + bwFile
+                                            urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(bwFile)
                                         }, gcCoverageTrackCfg));
                                     });
                                 }
@@ -228,7 +228,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name + ' Coverage',
-                            urlTemplate: url + bwFile,
+                            urlTemplate: url + escUrl(bwFile),
                             autoscale: 'local'
                         }, customTrackCfg));
                     },
@@ -237,7 +237,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name,
-                            urlTemplate: API_DATA_URL + item.id + '/download/' + item.output.bigwig.file,
+                            urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(item.output.bigwig.file),
                             autoscale: 'local'
                         }, customTrackCfg));
                     }
