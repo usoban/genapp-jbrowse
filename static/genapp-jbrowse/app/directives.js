@@ -44,13 +44,15 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, notify, genBrowserId, supportedTypes) {
+            controller: ['$scope', '$q', '$timeout', '$filter', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, notify, genBrowserId, supportedTypes) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
                     preConnect,
                     connector,
                     getTrackByLabel;
+
+                var escUrl = $filter('escape');
 
                 var defaultConfig = {
                   containerID: genBrowserId.generateId()
@@ -129,12 +131,12 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                                 type: 'JBrowse/View/Track/Alignments2',
                                 storeClass: 'JBrowse/Store/SeqFeature/BAM',
                                 category: 'NGS',
-                                urlTemplate: url + item.output.bam.file,
-                                baiUrlTemplate: url + item.output.bai.file,
+                                urlTemplate: url + escUrl(item.output.bam.file),
+                                baiUrlTemplate: url + escUrl(item.output.bai.file),
                                 label: item.static.name
                             }, alignmentCfg)).then(function () {
                                 afterTrack.resolve();
-                            })
+                            });
                         } else {
                             afterTrack.resolve();
                         }
@@ -148,7 +150,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + bigWigFile
+                                urlTemplate: url + escUrl(bigWigFile)
                             }, coverageCfg));
                         });
                     },
@@ -162,7 +164,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name + ' RPKUM Coverage',
-                            urlTemplate: url + bigWigFile,
+                            urlTemplate: url + escUrl(bigWigFile),
                             autoscale: 'local'
                         });
                     },
@@ -177,8 +179,8 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type: 'JBrowse/View/Track/HTMLVariants',
                             storeClass: 'JBrowse/Store/SeqFeature/VCFTabix',
                             category: 'VCF',
-                            urlTemplate: url + bgzipFile,
-                            tbiUrlTemplate: url + tabixFile,
+                            urlTemplate: url + escUrl(bgzipFile),
+                            tbiUrlTemplate: url + escUrl(tabixFile),
                             label: item.static.name
                         }, customTrackCfg));
                     },
@@ -255,7 +257,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     delete $scope.browser._deferred['reloadRefSeqs'];
                     deferredSetup = $scope.browser._getDeferred('reloadRefSeqs');
                     setupFn = function () {
-                        if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length == 0) {
+                        if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length <= 0) {
                             return;
                         }
                         _.each($scope.browser.allRefs, function (r){
