@@ -299,7 +299,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     }
 
                     var deferred = $q.defer();
-                    if (trackCfg.urlTemplate) {
+                    if (trackCfg.urlTemplate && !isSequenceTrack) {
                         TestFile.get({file: trackCfg.urlTemplate}, deferred.resolve, deferred.reject);
                     } else {
                         deferred.resolve();
