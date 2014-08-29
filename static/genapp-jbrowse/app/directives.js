@@ -300,12 +300,20 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
 
                     var deferred = $q.defer();
                     if (trackCfg.urlTemplate && !isSequenceTrack) {
-                        TestFile.get({file: trackCfg.urlTemplate}, deferred.resolve, deferred.reject);
+                        TestFile.get({file: trackCfg.urlTemplate}, function () {
+                            deferred.resolve(true);
+                        }, function () {
+                            deferred.resolve(false);
+                        });
                     } else {
-                        deferred.resolve();
+                        deferred.resolve(true);
                     }
 
-                    return deferred.$promise.then(function () {
+                    return deferred.$promise.then(function (wasSuccessful) {
+                        if (!wasSuccessful) {
+                            notify({message: 'Because there was an issue with track ' + trackCfg.label + ', it will not be shown', type: 'error'});
+                            return;
+                        }
                         // prepare for config loading.
                         $scope.browser.config.include = [];
                         if ($scope.browser.reachedMilestone('loadConfig')) {
