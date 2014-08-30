@@ -44,7 +44,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', '$filter', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, notify, genBrowserId, supportedTypes) {
+            controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
@@ -160,7 +160,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
 
                         if (!bigWigFile) return;
 
-                        addTrack({
+                        return addTrack({
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name + ' RPKUM Coverage',
@@ -233,7 +233,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         }, customTrackCfg));
                     },
                     'data:bigwig:mappability:': function (item, customTrackCfg) {
-                        addTrack($.extend({}, {
+                        return addTrack($.extend({}, {
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name,
@@ -291,41 +291,54 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 // Adds track to JBrowse.
                 addTrack = function (trackCfg) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined,
-                        promise;
+                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
 
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
                         return;
                     }
 
-                    // prepare for config loading.
-                    $scope.browser.config.include = [];
-                    if ($scope.browser.reachedMilestone('loadConfig')) {
-                        delete $scope.browser._deferred['loadConfig'];
+                    var deferred = $q.defer();
+                    if (trackCfg.urlTemplate && !isSequenceTrack) {
+                        TestFile.get({file: trackCfg.urlTemplate}, function () {
+                            deferred.resolve(true);
+                        }, function () {
+                            deferred.resolve(false);
+                        });
+                    } else {
+                        deferred.resolve(true);
                     }
 
-                    $scope.browser.config.include.push({
-                        format: 'JB_json',
-                        version: 1,
-                        data: {
-                            sourceUrl: trackCfg.baseUrl || '#',
-                            tracks: [trackCfg]
+                    return deferred.$promise.then(function (wasSuccessful) {
+                        if (!wasSuccessful) {
+                            notify({message: 'Because there was an issue with track ' + trackCfg.label + ', it will not be shown', type: 'error'});
+                            return;
                         }
-                    });
-
-                    promise = $scope.browser.loadConfig();
-                    promise.then(function () {
-                        // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
-                        // which will be used for loading sequence chunks.
-                        if (isSequenceTrack) {
-                            $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
+                        // prepare for config loading.
+                        $scope.browser.config.include = [];
+                        if ($scope.browser.reachedMilestone('loadConfig')) {
+                            delete $scope.browser._deferred['loadConfig'];
                         }
 
-                        $scope.browser.showTracks([trackCfg.label]);
-                    });
+                        $scope.browser.config.include.push({
+                            format: 'JB_json',
+                            version: 1,
+                            data: {
+                                sourceUrl: trackCfg.baseUrl || '#',
+                                tracks: [trackCfg]
+                            }
+                        });
 
-                    return promise;
+                        return $scope.browser.loadConfig().then(function () {
+                            // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
+                            // which will be used for loading sequence chunks.
+                            if (isSequenceTrack) {
+                                $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
+                            }
+
+                            $scope.browser.showTracks([trackCfg.label]);
+                        });
+                    });
                 };
 
                 // Publicly exposed API.
