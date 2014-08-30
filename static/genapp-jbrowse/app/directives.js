@@ -299,7 +299,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     }
 
                     var deferred = $q.defer();
-                    if (trackCfg.urlTemplate && !isSequenceTrack) {
+                    if (trackCfg.urlTemplate && !_.contains(trackCfg.urlTemplate, '{')) { //skip if it contains {refseq} or {refseq_dirpath}
                         TestFile(trackCfg.urlTemplate, function () {
                             deferred.resolve(true);
                         }, function () {
