@@ -300,7 +300,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
 
                     var deferred = $q.defer();
                     if (trackCfg.urlTemplate && !isSequenceTrack) {
-                        TestFile.get({file: trackCfg.urlTemplate}, function () {
+                        TestFile(trackCfg.urlTemplate, function () {
                             deferred.resolve(true);
                         }, function () {
                             deferred.resolve(false);
@@ -309,7 +309,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         deferred.resolve(true);
                     }
 
-                    return deferred.$promise.then(function (wasSuccessful) {
+                    return deferred.promise.then(function (wasSuccessful) {
                         if (!wasSuccessful) {
                             notify({message: 'Because there was an issue with track ' + trackCfg.label + ', it will not be shown', type: 'error'});
                             return;
