@@ -279,6 +279,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         $.extend(trackCfg, config[trackCfg.genialisType]);
                     }
 
+                    if (trackCfg.dontAdd) return;
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
                         return;
@@ -343,6 +344,8 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                  *  }
                  *  Tracks are assigned genialisType = item's type + subtype.
                  *  Track configuration is extended with config[genialisType].
+                 *
+                 *  config[genialisType] can also contain dontAdd property, which will prevent track from being added.
                  */
                 $scope.options.addTrack = function (item, config) {
                     if (!(item.type in typeHandlers)) throw new Error('No handler for data type ' + item.type + ' defined.');
