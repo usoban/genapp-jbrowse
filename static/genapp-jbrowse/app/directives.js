@@ -59,6 +59,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 };
                 $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
 
+                var resolvedDefer = $q.defer();
+                resolvedDefer.resolve();
+                var resolvedPromise = resolvedDefer.promise;
+
                 // Handlers for each data object type.
                 typeHandlers = {
                     'data:genome:fasta:': function (item, config) {
@@ -279,10 +283,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         $.extend(trackCfg, config[trackCfg.genialisType]);
                     }
 
-                    if (trackCfg.dontAdd) return;
+                    if (trackCfg.dontAdd) return resolvedPromise;
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
-                        return;
+                        return resolvedPromise;
                     }
 
                     var deferred = $q.defer();
@@ -350,15 +354,13 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 $scope.options.addTrack = function (item, config) {
                     if (!(item.type in typeHandlers)) throw new Error('No handler for data type ' + item.type + ' defined.');
                     var maybePromise = typeHandlers[item.type](item, config);
-                    var deferred = $q.defer();
-                    deferred.resolve();
 
                     if (item.type in ($scope.options.afterAdd || {})) {
                         $scope.options.afterAdd[item.type].call($scope.browser);
                     }
 
                     // definitely promise
-                    return deferred.promise.then(function () {
+                    return resolvedPromise.then(function () {
                         return maybePromise;
                     });
                 };
