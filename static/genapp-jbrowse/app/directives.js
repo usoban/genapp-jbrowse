@@ -270,9 +270,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 };
 
                 // Adds track to JBrowse.
-                addTrack = function (trackCfg, customConfig) {
+                addTrack = function (trackCfg, config) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
                         alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
+
+                    if (!trackCfg.genialisType) throw new Error('Track is missing genialisType');
+                    if (config && config[trackCfg.genialisType]) {
+                        $.extend(trackCfg, config[trackCfg.genialisType]);
+                    }
 
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
