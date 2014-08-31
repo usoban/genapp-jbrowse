@@ -86,18 +86,18 @@ angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
             filter: filters['Sequence']
         };
 
+        var config = {
+            'data:alignment:bam:bigwig': {
+                min_score: 0,
+                max_score: 35
+            }
+        };
+
         $scope.jbrowseOptions = {
             onConnect: function () {
                 // when JBrowse is initialized, add the ability to select data in the table
                 $scope.$watchCollection('selection', function (items) {
                     if (!_.isArray(items) || items.length == 0) return;
-                    var config = {};
-                    if (items[0].type === "data:alignment:bam:") {
-                        config = [{}, {
-                            min_score: 0,
-                            max_score: 35
-                        }];
-                    }
                     $scope.jbrowseOptions.addTrack(items[0], config);
                 });
             },
