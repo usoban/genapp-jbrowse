@@ -1,7 +1,3 @@
-.jbrowse .gen-browser-container {
-    position: relative;
-    margin: auto;
-}
 .gen-browser {
     width: 100%;
     height: 100%;
@@ -15,32 +11,44 @@
     }
 }
 .padding-fix {
-  padding-top: 5px;
-  padding-bottom: 10px;
+    padding-top: 5px;
+    padding-bottom: 10px;
 }
-.cases .case .title {
-  font-size: 130%;
-}
-.cases .case-list .list-group {
-  max-height: 498px;
-  overflow-y: scroll;
-}
-.cases .case-list .case {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-.cases .case-list .case-filter {
-  background-color: transparent;
-  border: none;
-  padding: 0 0 5px 0;
-}
-.cases .case-list .case-filter input {
-  width: 100%;
+.jbrowse {
+    .gen-browser-container {
+        position: relative;
+        margin: auto;
+    }
+    .cases {
+        .case-list {
+            .list-group {
+                max-height: 498px;
+                overflow-y: scroll;
+            }
+            .case {
+                padding-top: 5px;
+                padding-bottom: 5px;
+
+                .title {
+                    font-size: 130%;
+                }
+            }
+            .case-filter {
+                background-color: transparent;
+                border: none;
+                padding: 0 0 5px 0;
+
+                input {
+                    width: 100%;
+                }
+            }
+        }
+    }
 }
 
 /* overriding jbrowse specialities */
 html, body {
-  overflow: visible;
+    overflow: visible;
 }
 /* overriding dijit theme div.container */
 div.container {
