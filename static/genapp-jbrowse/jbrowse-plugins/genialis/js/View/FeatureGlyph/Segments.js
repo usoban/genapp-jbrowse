@@ -1,4 +1,4 @@
-define("Genialis/View/FeatureGlyph/Segments", [
+define('Genialis/View/FeatureGlyph/Segments', [
            'dojo/_base/declare',
            'dojo/_base/lang',
            'dojo/_base/array',
@@ -43,10 +43,13 @@ renderConnector: function( context, fRect ) {
     if( connectorColor ) {
         context.fillStyle = connectorColor;
         var connectorThickness = this.getStyle( fRect.f, 'connectorThickness' );
+
+        // Render connector below label
         var top = fRect.rect.t;
         if ('label' in fRect) {
             top += fRect.label.h;
         }
+
         context.fillRect(
             fRect.rect.l, // left
             Math.round(top+(fRect.rect.h-connectorThickness)/2), // top
@@ -69,6 +72,7 @@ renderSegments: function( context, fRect ) {
         return thisB.getStyle( feature, stylename ) || thisB.getStyle( parentFeature, stylename );
     }
 
+    // Render subpart below label. Only pass the label object so subfeature can pick it up.
     if ('label' in fRect) {
         fRect.viewInfo.label = fRect.label;
     } else {
@@ -76,7 +80,7 @@ renderSegments: function( context, fRect ) {
     }
 
     for( var i = 0; i < subparts.length; ++i ) {
-        this.renderBox( context, fRect.viewInfo, subparts[i], fRect.t, fRect.rect.h, fRect.f, style );
+        this.renderBox( context, fRect.viewInfo, subparts[i], fRect.t, fRect.rect.h, fRect.f, style, fRect.details || null );
     }
 },
 
