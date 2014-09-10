@@ -59,7 +59,6 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                   containerID: genBrowserId.generateId()
                 };
                 $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
-                $scope.tracks = [];
 
                 var resolvedDefer = $q.defer();
                 resolvedDefer.resolve();
