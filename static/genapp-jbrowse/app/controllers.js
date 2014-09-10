@@ -107,7 +107,8 @@ angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
                     $scope.selectionModel.restrictedMode = false;
                     $scope.selectionModel.type = 'Other';
                 }
-            }
+            },
+            keepState: true
         };
     }])
 ;

@@ -28,6 +28,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
+         *      :keepState:     boolean indicating whether to load/save state from/to URL.
          *      :jbrowse:       Directive exposes JBrowse object after connecting
          *
          *      API:
@@ -448,7 +449,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
-                        loadStateConfigs();
+                        if ($scope.options.keepState) loadStateConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
                     $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function (trackCfgs) {
