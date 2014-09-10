@@ -44,13 +44,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes) {
+            controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', 'StateUrl', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes, StateUrl) {
                 var typeHandlers,
                     addTrack,
                     reloadRefSeqs,
                     preConnect,
                     connector,
-                    getTrackByLabel;
+                    getTrackByLabel,
+                    loadConfigs;
 
                 var escUrl = $filter('escape');
 
@@ -58,6 +59,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                   containerID: genBrowserId.generateId()
                 };
                 $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
+                $scope.tracks = [];
 
                 var resolvedDefer = $q.defer();
                 resolvedDefer.resolve();
@@ -66,8 +68,8 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 // Handlers for each data object type.
                 typeHandlers = {
                     'data:genome:fasta:': function (item, config) {
-                        var baseUrl = API_DATA_URL + item.id + '/download/seq',
-                            lbl = item.static.name,
+                        var baseUrl = config.baseUrl || API_DATA_URL + item.id + '/download/seq',
+                            lbl = config.label || item.static.name,
                             purgeStoreDefer = $q.defer();
 
                         if ($scope.browser.config.stores) {
@@ -95,8 +97,11 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
 
                         return purgeStoreDefer.promise.then(function () {
                             return reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                                return addTrack({
-                                    genialisType: item.type,
+                                var bwFile = supportedTypes.find(item, 'output.twobit.refs', supportedTypes.patterns['bigWig']),
+                                    promise;
+
+                                promise = addTrack({
+                                    genialisType: config.genialisType || item.type,
                                     type:        'JBrowse/View/Track/Sequence',
                                     storeClass:  'JBrowse/Store/Sequence/StaticChunked',
                                     urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
@@ -104,16 +109,21 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                                     category:    'Reference sequence',
                                     label:       lbl,
                                     showTranslation: false
-                                }, config).then(function () {
-                                    var bwFile = supportedTypes.find(item, 'output.twobit.refs', supportedTypes.patterns['bigWig']);
-                                    return bwFile && addTrack({
-                                        genialisType: item.type + 'gc',
-                                        type: 'JBrowse/View/Track/Wiggle/XYPlot',
-                                        storeClass: 'JBrowse/Store/SeqFeature/BigWig',
-                                        label: item.static.name + ' GC Window',
-                                        urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(bwFile)
-                                    }, config);
-                                });
+                                }, config);
+
+                                if (bwFile) {
+                                    return promise.then(function () {
+                                       return addTrack({
+                                            genialisType: item.type + 'gc',
+                                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                                            label: item.static.name + ' GC Window',
+                                            urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(bwFile)
+                                        }, config);
+                                    });
+                                } else {
+                                    return promise;
+                                }
                             });
                         });
                     },
@@ -228,6 +238,37 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     }
                 };
 
+                loadConfigs = function () {
+                    var lastPromise,
+                        addTrackPromise;
+
+                    addTrackPromise = function(cfg) {
+                        if (cfg.genialisType === 'data:genome:fasta:') {
+                            return $scope.options.addTrack({type: cfg.genialisType}, cfg);
+                        } else {
+                            return addTrack(cfg);
+                        }
+                    };
+
+                    $scope.tracks = StateUrl($scope, ['tracks']).tracks || [];
+                    _.each($scope.tracks, function(cfg) {
+                        var d = $q.defer();
+                        if (typeof lastPromise === 'undefined') {
+                            lastPromise = d.promise;
+                            addTrackPromise(cfg).then(function () {
+                                d.resolve();
+                            });
+                        } else {
+                            lastPromise.then(function () {
+                                addTrackPromise(cfg).then(function () {
+                                    d.resolve();
+                                });
+                            });
+                            lastPromise = d.promise;
+                        }
+                    });
+                };
+
                 // Gets JBrowse track. Searches by label.
                 getTrackByLabel = function (lbl) {
                     return _.findWhere($scope.browser.config.tracks || [], {label: lbl});
@@ -328,6 +369,12 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             }
 
                             $scope.browser.showTracks([trackCfg.label]);
+                            $scope.tracks.push(trackCfg);
+
+                            if (trackCfg.genialisType in ($scope.options.afterAdd || {})) {
+                                $scope.options.afterAdd[trackCfg.genialisType].call($scope.browser);
+                            }
+                            return true;
                         });
                     });
                 };
@@ -352,13 +399,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                  *  config[genialisType] can also contain dontAdd property, which will prevent track from being added.
                  */
                 $scope.options.addTrack = function (item, config) {
+                    var maybePromise;
+
                     if (!(item.type in typeHandlers)) throw new Error('No handler for data type ' + item.type + ' defined.');
-                    var maybePromise = typeHandlers[item.type](item, config);
-
-                    if (item.type in ($scope.options.afterAdd || {})) {
-                        $scope.options.afterAdd[item.type].call($scope.browser);
-                    }
-
+                    maybePromise = typeHandlers[item.type](item, config);
                     // definitely promise
                     return resolvedPromise.then(function () {
                         return maybePromise;
@@ -403,6 +447,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
+                        loadConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
                     $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function (trackCfgs) {
