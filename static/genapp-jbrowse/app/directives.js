@@ -51,7 +51,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     preConnect,
                     connector,
                     getTrackByLabel,
-                    loadConfigs;
+                    loadStateConfigs;
 
                 var escUrl = $filter('escape');
 
@@ -237,7 +237,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     }
                 };
 
-                loadConfigs = function () {
+                loadStateConfigs = function () {
                     var lastPromise,
                         addTrackPromise;
 
@@ -446,7 +446,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
-                        loadConfigs();
+                        loadStateConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
                     $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function (trackCfgs) {
