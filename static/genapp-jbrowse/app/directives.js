@@ -368,7 +368,9 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             }
 
                             $scope.browser.showTracks([trackCfg.label]);
-                            $scope.tracks.push(trackCfg);
+                            if (typeof _.findWhere($scope.tracks, {label: trackCfg.label}) == 'undefined') {
+                                $scope.tracks.push(trackCfg);
+                            }
 
                             if (trackCfg.genialisType in ($scope.options.afterAdd || {})) {
                                 $scope.options.afterAdd[trackCfg.genialisType].call($scope.browser);
@@ -450,7 +452,12 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
                     $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function (trackCfgs) {
+                        var removedLabels = _.pluck(trackCfgs, 'label');
                         $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
+                        $scope.tracks = _.filter($scope.tracks, function (track) {
+                            return removedLabels.indexOf(track.label) == -1;
+                        });
+                        $scope.$digest();
                     });
 
                     if (_.isFunction($scope.options.onConnect || {})) {
