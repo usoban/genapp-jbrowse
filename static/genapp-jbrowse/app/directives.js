@@ -46,7 +46,11 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
             controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', 'StateUrl', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes, StateUrl) {
-                var typeHandlers,
+                var escUrl,
+                    defaultConfig,
+                    resolvedDefer,
+                    resolvedPromise,
+                    typeHandlers,
                     beforeAdd,
                     addTrack,
                     purgeRefSeqs,
@@ -56,16 +60,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     getTrackByLabel,
                     loadStateConfigs;
 
-                var escUrl = $filter('escape');
-
-                var defaultConfig = {
+                escUrl = $filter('escape');
+                defaultConfig = {
                     containerID: genBrowserId.generateId()
                 };
                 $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
-
-                var resolvedDefer = $q.defer();
+                resolvedDefer = $q.defer();
                 resolvedDefer.resolve();
-                var resolvedPromise = resolvedDefer.promise;
+                resolvedPromise = resolvedDefer.promise;
 
                 // Before add handler for each data type.
                 beforeAdd = {
@@ -322,7 +324,8 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 // Adds track to JBrowse.
                 addTrack = function (trackCfg, config) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
-                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined;
+                        alreadyExists = getTrackByLabel(trackCfg.label) !== undefined,
+                        deferred;
 
                     if (!trackCfg.genialisType) throw new Error('Track is missing genialisType');
                     if (config && config[trackCfg.genialisType]) {
@@ -335,7 +338,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         return resolvedPromise;
                     }
 
-                    var deferred = $q.defer();
+                    deferred = $q.defer();
                     if (trackCfg.urlTemplate && !_.contains(trackCfg.urlTemplate, '{')) { //skip if it contains {refseq} or {refseq_dirpath}
                         TestFile(trackCfg.urlTemplate, function () {
                             deferred.resolve(true);
