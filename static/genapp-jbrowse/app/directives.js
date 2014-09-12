@@ -105,7 +105,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         if (bwFile) {
                             return promise.then(function () {
                                return addTrack({
-                                    genialisType: item.type + 'gc',
+                                    genialisType: item.type + 'gc:',
                                     type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                     storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                     label: item.static.name + ' GC Window',
