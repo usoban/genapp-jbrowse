@@ -105,6 +105,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'data:expression:polya:': true,
                 'data:variants:vcf:': true,
                 'data:annotation:gff3:': true,
+                'data:annotation:gff3:blast:': true,
                 'data:mappability:bcm:': true,
                 'data:bigwig:mappability:': true,
                 'data:annotation:gtf:': true
@@ -143,6 +144,9 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 'output.vcf.refs': [commonPatterns['vcf'], commonPatterns['vcfIdx']]
             },
             'data:annotation:gff3:': {
+                'output.gff.refs': commonPatterns['gff']
+            },
+            'data:annotation:gff3:blast:': {
                 'output.gff.refs': commonPatterns['gff']
             },
             'data:annotation:gtf:': {

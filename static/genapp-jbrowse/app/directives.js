@@ -176,6 +176,20 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         return addTrack({
                             genialisType: item.type,
                             storeClass: 'JBrowse/Store/SeqFeature/NCList',
+                            type: 'JBrowse/View/Track/CanvasFeatures',
+                            urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
+                            label: item.static.name,
+                            compress: 0,
+                        }, config);
+                    },
+                    // TODO: need to have a way of defining handler for _all_ data:annotation:gff:* tracks
+                    'data:annotation:gff3:blast:': function (item, config) {
+                        var url = API_DATA_URL + item.id + '/download/';
+                        if (!_.contains(item.output.gff.refs || [], 'tracks/gff-track')) return;
+
+                        return addTrack({
+                            genialisType: item.type,
+                            storeClass: 'JBrowse/Store/SeqFeature/NCList',
                             type: 'Genialis/View/Track/CanvasFeatures',
                             glyph: 'Genialis/View/FeatureGlyph/Segments',
                             subParts: 'match_part',
