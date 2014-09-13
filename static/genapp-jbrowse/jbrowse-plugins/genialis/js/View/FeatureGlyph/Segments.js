@@ -49,6 +49,10 @@ renderConnector: function( context, fRect ) {
         if ('label' in fRect) {
             top += fRect.label.h;
         }
+        // Render connector below query locations
+        if ('queryLocations' in fRect) {
+            top += fRect.queryLocations.h;
+        }
 
         context.fillRect(
             fRect.rect.l, // left
@@ -80,7 +84,10 @@ renderSegments: function( context, fRect ) {
     }
 
     for( var i = 0; i < subparts.length; ++i ) {
-        this.renderBox( context, fRect.viewInfo, subparts[i], fRect.t, fRect.rect.h, fRect.f, style, fRect.details || null );
+        this.renderBox(
+            context, fRect.viewInfo, subparts[i], fRect.t, fRect.rect.h, fRect.f, style,
+            fRect.queryLocations || null, fRect.subjectLocations || null
+        );
     }
 },
 

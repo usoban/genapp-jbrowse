@@ -14,9 +14,10 @@ define('Genialis/View/FeatureGlyph/Box', [
 return declare([ FeatureGlyphBox ], {
 
     // Rendering the box beneath label
-    renderBox: function( context, viewInfo, feature, top, overallHeight, parentFeature, style, details ) {
+    renderBox: function( context, viewInfo, feature, top, overallHeight, parentFeature, style, queryLocations, subjectLocations ) {
         var left  = viewInfo.block.bpToX( feature.get('start') );
         var width = viewInfo.block.bpToX( feature.get('end') ) - left;
+        var endPosTxt;
 
         style = style || lang.hitch( this, 'getStyle' );
 
@@ -25,9 +26,12 @@ return declare([ FeatureGlyphBox ], {
         if( ! height )
             return;
 
-
         if ('label' in viewInfo) {
             top += viewInfo.label.h;
+        }
+
+        if (typeof 'queryLocations' !== 'undefined' && queryLocations !== null) {
+            top += queryLocations.h;
         }
 
         if( height != overallHeight )
@@ -64,25 +68,51 @@ return declare([ FeatureGlyphBox ], {
             }
         }
 
-        if (typeof details !== 'undefined' && details !== null) {
-            var endPosTxt;
-            context.font = details.font;
-            context.fillStyle = details.fill;
-            context.textBaseline = details.baseline;
+        // render locations on query sequence
+        if (typeof queryLocations !== 'undefined' && queryLocations !== null) {
+            context.font = queryLocations.font;
+            context.fillStyle = queryLocations.fill;
+            context.textBaseline = queryLocations.baseline;
 
             // start
             context.fillText (
                 feature.get('start'),
                 left,
-                top + height + details.h
+                top
             );
 
             // end
             endPosTxt = new String(feature.get('end'));
             context.fillText(
                 endPosTxt,
-                left + width - endPosTxt.length * details.tw,
-                top + height + details.h
+                left + width - endPosTxt.length * queryLocations.tw,
+                top
+            );
+        }
+
+        if (typeof subjectLocations !== 'undefined' && subjectLocations !== null) {
+            var matchLocs,
+                matchStart,
+                matchEnd;
+
+            context.font = subjectLocations.font;
+            context.fillStyle = subjectLocations.fill;
+            context.textBaseline = subjectLocations.baseline;
+
+            // start
+            matchLocs = feature.get('matchlocs').split(' ');
+            matchStart = parseInt(matchLocs[0]);
+            matchEnd = parseInt(matchLocs[1]);
+            context.fillText(
+                matchStart,
+                left,
+                top + height + subjectLocations.h
+            );
+            // end
+            context.fillText(
+                matchEnd,
+                left + width - new String(matchEnd).length * subjectLocations.tw,
+                top + height + subjectLocations.h
             );
         }
     },
@@ -90,7 +120,7 @@ return declare([ FeatureGlyphBox ], {
     // Render label above feature
     renderLabel: function( context, fRect ) {
         if( fRect.label ) {
-            context.font = fRect.label.font;
+            context.font = 'bold ' + fRect.label.font;
             context.fillStyle = fRect.label.fill;
             context.textBaseline = fRect.label.baseline;
             context.fillText( fRect.label.text,
@@ -108,8 +138,8 @@ return declare([ FeatureGlyphBox ], {
 //
 //            context.lineWidth = 2;
 //            context.beginPath();
-//            context.moveTo(0, fRect.t + fRect.label.yOffset + fRect.details.h);
-//            context.lineTo(200, fRect.t + fRect.label.yOffset + fRect.details.h);
+//            context.moveTo(0, fRect.t + fRect.label.yOffset + fRect.queryLocations.h);
+//            context.lineTo(200, fRect.t + fRect.label.yOffset + fRect.queryLocations.h);
 //            context.stroke();
         }
     },
@@ -121,6 +151,9 @@ return declare([ FeatureGlyphBox ], {
 
         if ('label' in fRect) {
             top += fRect.label.h;
+        }
+        if ('queryLocations' in fRect) {
+            top += fRect.queryLocations.h;
         }
 
         // highlight the feature rectangle if we're moused over
@@ -146,7 +179,8 @@ return declare([ FeatureGlyphBox ], {
     // to accomodate a label and/or a description
     _expandRectangleWithLabels: function( viewArgs, feature, fRect ) {
         var label,
-            details;
+            queryLocations,
+            subjectLocations;
 
         // maybe get the feature's name, and update the layout box
         // accordingly
@@ -160,25 +194,19 @@ return declare([ FeatureGlyphBox ], {
             }
         }
 
-        details = this.makeFeatureDetails(feature, fRect);
-        if (details) {
-//            console.log('got labels for ' + details.labels.length + ' subfeatures.');
-            fRect.details = details;
-            fRect.h += details.h;
-            details.yOffset = fRect.rect.h + label.h;
+        queryLocations = this.makeFeatureDetails(feature, fRect);
+        if (queryLocations) {
+            fRect.queryLocations = queryLocations;
+            fRect.h += queryLocations.h;
+            queryLocations.yOffset = label.h; //fRect.rect.h + label.h;
         }
 
-//        // maybe get the feature's description if available, and
-//        // update the layout box accordingly
-//        if( viewArgs.showDescriptions ) {
-//            var description = this.makeFeatureDescriptionLabel( feature, fRect );
-//            if( description ) {
-//                fRect.description = description;
-//                fRect.h += description.h;
-//                fRect.w = Math.max( description.w, fRect.w );
-//                description.yOffset = fRect.h-(this.getStyle( feature, 'marginBottom' ) || 0);
-//            }
-//        }
+        subjectLocations = this.makeFeatureDetails(feature, fRect);
+        if (subjectLocations) {
+            fRect.subjectLocations = subjectLocations;
+            fRect.h += subjectLocations.h;
+            queryLocations.yOffset = label.h;
+        }
     }
 });
 });
