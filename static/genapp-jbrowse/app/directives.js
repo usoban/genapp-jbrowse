@@ -277,12 +277,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                         if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length <= 0) {
                             return;
                         }
-                        _.each($scope.browser.allRefs, function (r){
-                            $scope.browser.refSeqSelectBox.addOption({
-                                label: r.name,
-                                value: r.name
+                        if ('refSeqSelectBox' in $scope.browser) {
+                            _.each($scope.browser.allRefs, function (r){
+                                $scope.browser.refSeqSelectBox.addOption({
+                                    label: r.name,
+                                    value: r.name
+                                });
                             });
-                        });
+                        }
 
                         deferredSetup.resolve(true);
                     };
@@ -290,8 +292,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     $scope.browser.allRefs = {};
                     $scope.browser.refSeq = null;
                     $scope.browser.refSeqOrder = [];
-                    $scope.browser.refSeqSelectBox.removeOption($scope.browser.refSeqSelectBox.getOptions());
-                    $scope.browser.refSeqSelectBox.set('value', '');
+                    if ('refSeqSelectBox' in $scope.browser) {
+                        $scope.browser.refSeqSelectBox.removeOption($scope.browser.refSeqSelectBox.getOptions());
+                        $scope.browser.refSeqSelectBox.set('value', '');
+                    }
 
                     $scope.browser.config['refSeqs'] = {
                         url: newRefseqsUrl
