@@ -179,7 +179,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             type: 'JBrowse/View/Track/CanvasFeatures',
                             urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
                             label: item.static.name,
-                            compress: 0,
+                            compress: 0
                         }, config);
                     },
                     // TODO: need to have a way of defining handler for _all_ data:annotation:gff:* tracks
