@@ -73,14 +73,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 beforeAdd = {
                     'data:genome:fasta:': function (config) {
                         var purgeStorePromise = purgeRefSeqs(config.label),
-                            reloadDeffered = $q.defer();
+                            reloadDeferred = $q.defer();
 
                         purgeStorePromise.then(function () {
                             reloadRefSeqs(config.baseUrl + '/refSeqs.json').then(function () {
-                                reloadDeffered.resolve();
+                                reloadDeferred.resolve();
                             });
                         });
-                        return reloadDeffered.promise;
+                        return reloadDeferred.promise;
                     }
                 };
 
