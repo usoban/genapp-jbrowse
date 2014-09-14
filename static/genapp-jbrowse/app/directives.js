@@ -45,7 +45,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', 'StateUrl', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes, StateUrl) {
+            controller: ['$scope', '$q', '$timeout', '$filter', '$injector', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, $injector, TestFile, notify, genBrowserId, supportedTypes) {
                 var escUrl,
                     defaultConfig,
                     resolvedDefer,
@@ -73,14 +73,14 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 beforeAdd = {
                     'data:genome:fasta:': function (config) {
                         var purgeStorePromise = purgeRefSeqs(config.label),
-                            reloadDeffered = $q.defer();
+                            reloadDeferred = $q.defer();
 
                         purgeStorePromise.then(function () {
                             reloadRefSeqs(config.baseUrl + '/refSeqs.json').then(function () {
-                                reloadDeffered.resolve();
+                                reloadDeferred.resolve();
                             });
                         });
-                        return reloadDeffered.promise;
+                        return reloadDeferred.promise;
                     }
                 };
 
@@ -228,7 +228,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 };
 
                 loadStateConfigs = function () {
-                    var lastPromise;
+                    var lastPromise,
+                        StateUrl;
+
+                    StateUrl = $injector.get('StateUrl');
                     $scope.tracks = StateUrl($scope, ['tracks']).tracks || [];
                     _.each($scope.tracks, function(cfg) {
                         var d = $q.defer();
@@ -468,6 +471,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
+                        $scope.tracks = [];
                         if ($scope.options.keepState) loadStateConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
