@@ -471,6 +471,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
+                        $scope.tracks = [];
                         if ($scope.options.keepState) loadStateConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
