@@ -79,6 +79,7 @@ angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
             itemsByPage: 15,
             project: $scope.project,
             genId: 'datalist-all',
+            genApp: 'jbrowse',
             multiSelect: false,
             showExport: false,
             showImport: false,
