@@ -45,7 +45,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
             },
             replace: true,
             templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', '$filter', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', 'StateUrl', function ($scope, $q, $timeout, $filter, TestFile, notify, genBrowserId, supportedTypes, StateUrl) {
+            controller: ['$scope', '$q', '$timeout', '$filter', '$injector', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, $injector, TestFile, notify, genBrowserId, supportedTypes) {
                 var escUrl,
                     defaultConfig,
                     resolvedDefer,
@@ -228,7 +228,10 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                 };
 
                 loadStateConfigs = function () {
-                    var lastPromise;
+                    var lastPromise,
+                        StateUrl;
+
+                    StateUrl = $injector.get('StateUrl');
                     $scope.tracks = StateUrl($scope, ['tracks']).tracks || [];
                     _.each($scope.tracks, function(cfg) {
                         var d = $q.defer();
