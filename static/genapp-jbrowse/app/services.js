@@ -26,7 +26,7 @@ angular.module('jbrowse.services', ['ngResource', 'genjs.services'])
                 deferred.reject(message);
             });
             return deferred.promise;
-        }
+        };
     }])
 
     /**
