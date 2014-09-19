@@ -14,7 +14,7 @@ define('Genialis/View/FeatureGlyph/Box', [
 return declare([ FeatureGlyphBox ], {
 
     // Rendering the box beneath label
-    renderBox: function( context, viewInfo, feature, top, overallHeight, parentFeature, style, queryLocations, subjectLocations ) {
+    renderBox: function( context, viewInfo, feature, top, overallHeight, parentFeature, style, queryLocations, subjectLocations, annotationLocations ) {
         var left  = viewInfo.block.bpToX( feature.get('start') );
         var width = viewInfo.block.bpToX( feature.get('end') ) - left;
         var endPosTxt;
@@ -76,7 +76,7 @@ return declare([ FeatureGlyphBox ], {
 
             // start
             context.fillText (
-                feature.get('start'),
+                parseInt(feature.get('start')) > 0 ? feature.get('start') : 1,
                 left,
                 top
             );
@@ -114,6 +114,33 @@ return declare([ FeatureGlyphBox ], {
                 left + width - new String(matchEnd).length * subjectLocations.tw,
                 top + height + subjectLocations.h
             );
+        }
+
+        var annotations = feature.get('annotations');
+        if (typeof annotations !== 'undefined') {
+            annotations = JSON.parse(annotations);
+            for (var i = 0; i < annotations.length; i++) {
+                var l = viewInfo.block.bpToX(annotations[i]['from']),
+                    r = viewInfo.block.bpToX(annotations[i]['to']),
+                    w = r - l + 1;
+
+                context.fillStyle = annotationLocations.markerFill;
+                context.fillRect(
+                    l,
+                    top + height + subjectLocations.h + annotationLocations.h,
+                    w,
+                    annotationLocations.markerThickness
+                );
+
+                context.font = annotationLocations.font;
+                context.fillStyle = annotationLocations.textFill;
+                context.textBaseline = annotationLocations.baseline;
+                context.fillText(
+                    annotations[i]['value'],
+                    l + (w - annotations[i]['value'].length * annotationLocations.tw)/2,
+                    top + height + subjectLocations.h + annotationLocations.h - annotationLocations.markerThickness
+                );
+            }
         }
     },
 
@@ -175,12 +202,30 @@ return declare([ FeatureGlyphBox ], {
         };
     },
 
+    makeFeatureAnnotations: function(feature, fRect) {
+        var font = this.getStyle(feature, 'textFont'),
+            dims = this.measureFont(font),
+            textFill = this.getStyle(feature, 'textColor'),
+            markerFill = this.getStyle(feature, 'markerColor'),
+            markerThickness = this.getStyle( fRect.f, 'connectorThickness' );
+        return {
+            font: font,
+            baseline: 'bottom',
+            h: dims.h + markerThickness,
+            tw: dims.w,
+            textFill: textFill,
+            markerFill: markerFill,
+            markerThickness: 5
+        };
+    },
+
     // given an under-construction feature layout rectangle, expand it
     // to accomodate a label and/or a description
     _expandRectangleWithLabels: function( viewArgs, feature, fRect ) {
         var label,
             queryLocations,
-            subjectLocations;
+            subjectLocations,
+            annotations;
 
         // maybe get the feature's name, and update the layout box
         // accordingly
@@ -206,6 +251,13 @@ return declare([ FeatureGlyphBox ], {
             fRect.subjectLocations = subjectLocations;
             fRect.h += subjectLocations.h;
             queryLocations.yOffset = label.h;
+        }
+
+        // if any subfeature is annotated
+        annotations = this.makeFeatureAnnotations(feature, fRect);
+        if (annotations) {
+            fRect.annotations = annotations;
+            fRect.h += annotations.h;
         }
     }
 });

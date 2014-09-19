@@ -86,7 +86,7 @@ renderSegments: function( context, fRect ) {
     for( var i = 0; i < subparts.length; ++i ) {
         this.renderBox(
             context, fRect.viewInfo, subparts[i], fRect.t, fRect.rect.h, fRect.f, style,
-            fRect.queryLocations || null, fRect.subjectLocations || null
+            fRect.queryLocations || null, fRect.subjectLocations || null, fRect.annotations || null
         );
     }
 },

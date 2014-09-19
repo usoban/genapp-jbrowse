@@ -201,6 +201,7 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             style: {
                                 _defaultLabelScale: 1,
                                 className: 'generic_parent',
+                                markerColor: '#336699',
                                 color: function (feature, varName, glyphObj, track) {
                                     var q = feature[7];
                                     if (q >= 200) {
