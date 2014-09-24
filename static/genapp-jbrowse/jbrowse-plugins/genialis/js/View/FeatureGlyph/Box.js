@@ -119,27 +119,36 @@ return declare([ FeatureGlyphBox ], {
         var annotations = feature.get('annotations');
         if (typeof annotations !== 'undefined') {
             annotations = JSON.parse(annotations);
-            for (var i = 0; i < annotations.length; i++) {
-                var l = viewInfo.block.bpToX(annotations[i]['from']),
-                    r = viewInfo.block.bpToX(annotations[i]['to']),
+            for (var row = 0; row < annotations.length; row++) {
+                for (var i = 0; i < annotations[row].length; i++) {
+                    var l, r, w;
+
+                    if (annotations[row][i]['strand'] === '-') {
+                        l = viewInfo.block.bpToX(annotations[row][i]['trans_from']);
+                        r = viewInfo.block.bpToX(annotations[row][i]['trans_to']);
+                    } else {
+                        r = viewInfo.block.bpToX(annotations[row][i]['trans_from']);
+                        l = viewInfo.block.bpToX(annotations[row][i]['trans_to']);
+                    }
+
                     w = r - l + 1;
+                    context.fillStyle = annotationLocations.markerFill;
+                    context.fillRect(
+                        l,
+                        top + height + subjectLocations.h + annotationLocations.rowH*(row+1),
+                        w,
+                        annotationLocations.markerThickness
+                    );
 
-                context.fillStyle = annotationLocations.markerFill;
-                context.fillRect(
-                    l,
-                    top + height + subjectLocations.h + annotationLocations.h,
-                    w,
-                    annotationLocations.markerThickness
-                );
-
-                context.font = annotationLocations.font;
-                context.fillStyle = annotationLocations.textFill;
-                context.textBaseline = annotationLocations.baseline;
-                context.fillText(
-                    annotations[i]['value'],
-                    l + (w - annotations[i]['value'].length * annotationLocations.tw)/2,
-                    top + height + subjectLocations.h + annotationLocations.h - annotationLocations.markerThickness
-                );
+                    context.font = annotationLocations.font;
+                    context.fillStyle = annotationLocations.textFill;
+                    context.textBaseline = annotationLocations.baseline;
+                    context.fillText(
+                        annotations[row][i]['value'],
+                            l + (w - annotations[row][i]['value'].length * annotationLocations.tw) / 2,
+                            top + height + subjectLocations.h + annotationLocations.rowH*(row+1)
+                    );
+                }
             }
         }
     },
@@ -207,11 +216,26 @@ return declare([ FeatureGlyphBox ], {
             dims = this.measureFont(font),
             textFill = this.getStyle(feature, 'textColor'),
             markerFill = this.getStyle(feature, 'markerColor'),
-            markerThickness = this.getStyle( fRect.f, 'connectorThickness' );
+            markerThickness = this.getStyle( fRect.f, 'connectorThickness'),
+            rows = 1,
+            children,
+            annotations,
+            rowH;
+
+        // Get max number of rows
+        children = feature.children();
+        for (var i = 0; i < children.length; i++) {
+            annotations = JSON.parse(children[i].get('annotations'));
+            if(Object.prototype.toString.call(annotations) !== '[object Array]' ) continue;
+            if (annotations.length > rows) rows = annotations.length;
+        }
+
+        rowH = dims.h + markerThickness + 10;
         return {
             font: font,
             baseline: 'bottom',
-            h: dims.h + markerThickness,
+            rowH: rowH,
+            h: rowH * 3,
             tw: dims.w,
             textFill: textFill,
             markerFill: markerFill,
