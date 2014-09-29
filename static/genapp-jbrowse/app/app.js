@@ -26,7 +26,7 @@ angular.module('jbrowse', [
        }];
 
         $routeProvider.when('/', {
-            templateUrl: '/static/genapp-jbrowse/partials/jbrowse.html',
+            templateUrl: '/static/genpackage-jbrowse/partials/jbrowse.html',
             controller: 'JBrowseController',
             resolve: { _project: resolveProject },
             reloadOnSearch: false

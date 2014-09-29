@@ -43,7 +43,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 options: '='
             },
             replace: true,
-            templateUrl: '/static/genapp-jbrowse/partials/directives/genbrowser.html',
+            templateUrl: '/static/genpackage-jbrowse/partials/directives/genbrowser.html',
             controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', function ($scope, $q, $timeout, notify, genBrowserId) {
                 var typeHandlers,
                     addTrack,
@@ -345,7 +345,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     // JBrowse initialization.
                     require(['JBrowse/Browser', 'dojo/io-query', 'dojo/json'], function (Browser, ioQuery, JSON) {
                         var genialisPlugin = {
-                            location: '/static/genapp-jbrowse/jbrowse-plugins/genialis'
+                            location: '/static/genpackage-jbrowse/jbrowse-plugins/genialis'
                         };
 
                         // monkey-patch. We need to remove default includes, since off-the-shelf version of JBrowse
@@ -359,8 +359,8 @@ angular.module('jbrowse.directives', ['genjs.services'])
                                 show_tracklist: false,
                                 show_nav: true,
                                 show_overview: true,
-                                refSeqs: '/static/genapp-jbrowse/refSeqs_dummy.json',
-                                nameUrl: '/static/genapp-jbrowse/names_dummy.json',
+                                refSeqs: '/static/genpackage-jbrowse/refSeqs_dummy.json',
+                                nameUrl: '/static/genpackage-jbrowse/names_dummy.json',
                                 highlightSearchedRegions: false,
                                 makeFullViewURL: false,
                                 updateBrowserURL: false,

@@ -1,2 +1,2 @@
-genapp-jbrowse
-==============
+genpackage-jbrowse
+==================
