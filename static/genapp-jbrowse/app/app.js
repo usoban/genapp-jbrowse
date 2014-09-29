@@ -17,7 +17,7 @@
  */
 angular.module('jbrowse', [
     'ngRoute', 'ngGrid', 'genjs.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers',
-    'jbrowse.services', 'jbrowse.directives'])
+    'jbrowse.services', 'jbrowse.directives', 'genexpress.services'])
 
     .config(['$routeProvider', function ($routeProvider) {
 
@@ -35,9 +35,5 @@ angular.module('jbrowse', [
             redirectTo: '/'
         });
     }])
-
-    .config(['$httpProvider', function ($httpProvider) {
-        // Adds a csrftoken to all http requests.
-        $httpProvider.defaults.headers.common['X-CSRFToken'] = $.cookie('csrftoken');
-    }])
+    .constant('title', 'JBrowse')
 ;

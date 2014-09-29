@@ -4,7 +4,7 @@
 var API_DATA_URL = '/api/v1/data/';
 
 // DIRECTIVES
-angular.module('jbrowse.directives', ['genjs.services'])
+angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
     .value('version', '0.1')
 
     .directive('genBrowser', ['notify', function (notify) {
@@ -28,6 +28,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
          *      :onConnect:     On JBrowse initialize callback.
          *      :afterAdd:      Dict with data types as keys and callback functions as values. Callback is executed after
          *                      given data type is added to the browser.
+         *      :keepState:     boolean indicating whether to load/save state from/to URL.
          *      :jbrowse:       Directive exposes JBrowse object after connecting
          *
          *      API:
@@ -44,142 +45,136 @@ angular.module('jbrowse.directives', ['genjs.services'])
             },
             replace: true,
             templateUrl: '/static/genpackage-jbrowse/partials/directives/genbrowser.html',
-            controller: ['$scope', '$q', '$timeout', 'notify', 'genBrowserId', function ($scope, $q, $timeout, notify, genBrowserId) {
-                var typeHandlers,
+            controller: ['$scope', '$q', '$timeout', '$filter', '$injector', 'TestFile', 'notify', 'genBrowserId', 'supportedTypes', function ($scope, $q, $timeout, $filter, $injector, TestFile, notify, genBrowserId, supportedTypes) {
+                var escUrl,
+                    defaultConfig,
+                    resolvedDefer,
+                    resolvedPromise,
+                    typeHandlers,
+                    beforeAdd,
                     addTrack,
+                    purgeRefSeqs,
                     reloadRefSeqs,
                     preConnect,
                     connector,
-                    getTrackByLabel;
+                    getTrackByLabel,
+                    loadStateConfigs;
 
-                var defaultConfig = {
-                  containerID: genBrowserId.generateId()
+                escUrl = $filter('escape');
+                defaultConfig = {
+                    containerID: genBrowserId.generateId()
                 };
                 $scope.config = $.extend(true, {}, defaultConfig, $scope.options.config);
+                resolvedDefer = $q.defer();
+                resolvedDefer.resolve();
+                resolvedPromise = resolvedDefer.promise;
+
+                // Before add handler for each data type.
+                beforeAdd = {
+                    'data:genome:fasta:': function (config) {
+                        var purgeStorePromise = purgeRefSeqs(config.label),
+                            reloadDeferred = $q.defer();
+
+                        purgeStorePromise.then(function () {
+                            reloadRefSeqs(config.baseUrl + '/refSeqs.json').then(function () {
+                                reloadDeferred.resolve();
+                            });
+                        });
+                        return reloadDeferred.promise;
+                    }
+                };
 
                 // Handlers for each data object type.
                 typeHandlers = {
-                    'data:genome:fasta:': function (item, customTrackCfg) {
+                    'data:genome:fasta:': function (item, config) {
                         var baseUrl = API_DATA_URL + item.id + '/download/seq',
-                            lbl = item.static.name,
-                            purgeStoreDefer = $q.defer();
+                            bwFile = supportedTypes.find(item, 'output.twobit.refs', supportedTypes.patterns['bigWig']),
+                            promise;
 
-                        if ($scope.browser.config.stores) {
-                            // Purge refseqs store before loading new one.
-                             $scope.browser.getStore('refseqs', function (store) {
-                                var seqTrackName;
-                                if (!store) {
-                                    purgeStoreDefer.resolve();
-                                    return;
-                                }
-                                seqTrackName = store.config.label;
-                                if (lbl == seqTrackName) {
-                                    purgeStoreDefer.reject();
-                                    return;
-                                }
-                                // remove all tracks if we're changing sequence.
-                                $scope.options.removeTracks($scope.browser.config.tracks);
-                                delete $scope.browser.config.stores['refseqs'];
-                                if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
-                                purgeStoreDefer.resolve();
+                        promise = addTrack({
+                            genialisType: item.type,
+                            type:        'JBrowse/View/Track/Sequence',
+                            storeClass:  'JBrowse/Store/Sequence/StaticChunked',
+                            urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
+                            baseUrl:     baseUrl,
+                            category:    'Reference sequence',
+                            label:       item.static.name,
+                            showTranslation: false
+                        }, config);
+
+                        if (bwFile) {
+                            return promise.then(function () {
+                               return addTrack({
+                                    genialisType: item.type + 'gc:',
+                                    type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                                    storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                                    label: item.static.name + ' GC Window',
+                                    urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(bwFile)
+                                }, config);
                             });
-                        } else {
-                            purgeStoreDefer.resolve();
                         }
 
-                        return purgeStoreDefer.promise.then(function () {
-                            return reloadRefSeqs(baseUrl + '/refSeqs.json').then(function () {
-                                return addTrack($.extend({}, {
-                                    type:        'JBrowse/View/Track/Sequence',
-                                    storeClass:  'JBrowse/Store/Sequence/StaticChunked',
-                                    urlTemplate: 'seq/{refseq_dirpath}/{refseq}-',
-                                    baseUrl:     baseUrl,
-                                    category:    'Reference sequence',
-                                    label:       lbl
-                                }, customTrackCfg));
-                            });
-                        });
+                        return promise;
                     },
-                    'data:alignment:bam:': function (item, customCfgArr) {
-                        var alignmentCfg = customCfgArr && customCfgArr[0] || {},
-                            coverageCfg = customCfgArr && customCfgArr[1] || {},
-                            url = API_DATA_URL + item.id + '/download/',
-                            afterTrack = $q.defer();
+                    'data:alignment:bam:': function (item, config) {
+                        var url = API_DATA_URL + item.id + '/download/';
 
-                        if (!alignmentCfg.dontAdd) {
-                            addTrack($.extend({}, {
-                                type: 'JBrowse/View/Track/Alignments2',
-                                storeClass: 'JBrowse/Store/SeqFeature/BAM',
-                                category: 'NGS',
-                                urlTemplate: url + item.output.bam.file,
-                                baiUrlTemplate: url + item.output.bai.file,
-                                label: item.static.name
-                            }, alignmentCfg)).then(function () {
-                                afterTrack.resolve();
-                            })
-                        } else {
-                            afterTrack.resolve();
-                        }
-                        return afterTrack.promise.then(function () {
-                            var bigWigFile = _.find(item.output.bam.refs || [], function(ref){
-                                return ref.substr(-3) === '.bw';
-                            });
-
-                            if (typeof bigWigFile === 'undefined') return;
-                            if (coverageCfg.dontAdd) return;
-
-                            return addTrack($.extend({}, {
+                        return addTrack({
+                            genialisType: item.type,
+                            type: 'JBrowse/View/Track/Alignments2',
+                            storeClass: 'JBrowse/Store/SeqFeature/BAM',
+                            category: 'NGS',
+                            urlTemplate: url + escUrl(item.output.bam.file),
+                            baiUrlTemplate: url + escUrl(item.output.bai.file),
+                            label: item.static.name
+                        }, config).then(function () {
+                            var bigWigFile = supportedTypes.find(item, 'output.bam.refs', supportedTypes.patterns['bigWig']);
+                            return bigWigFile && addTrack({
+                                genialisType: item.type + 'bigwig:',
                                 type: 'JBrowse/View/Track/Wiggle/XYPlot',
                                 storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                                 label: item.static.name + ' Coverage',
-                                urlTemplate: url + bigWigFile
-                            }, coverageCfg));
+                                urlTemplate: url + escUrl(bigWigFile)
+                            }, config);
                         });
                     },
-                    'data:expression:polya:': function (item) {
+                    'data:expression:polya:': function (item, config) {
                         var url = API_DATA_URL + item.id + '/download/',
-                            bigWigFile = _.findWhere(item.output.rpkumpolya.refs || [], function (ref) {
-                                var ext = '.bw';
-                                return ref.substr(-ext.length) === ext;
-                            });
+                            bigWigFile = supportedTypes.find(item, 'output.rpkumpolya.refs', supportedTypes.patterns['bigWig']);
 
-                        if (typeof bigWigFile === 'undefined') return;
-
-                        addTrack({
+                        return bigWigFile && addTrack({
+                            genialisType: item.type,
                             type: 'JBrowse/View/Track/Wiggle/XYPlot',
                             storeClass: 'JBrowse/Store/SeqFeature/BigWig',
                             label: item.static.name + ' RPKUM Coverage',
-                            urlTemplate: url + bigWigFile,
+                            urlTemplate: url + escUrl(bigWigFile),
                             autoscale: 'local'
-                        });
+                        }, config);
                     },
-                    'data:variants:vcf:': function (item, customTrackCfg) {
-                        var url = API_DATA_URL + item.id + '/download/';
-                        var bgzipFile = _.find(item.output.vcf.refs || [], function(ref){
-                            var ext = '.vcf.bgz';
-                            return ref.substr(-ext.length) === ext;
-                        });
-                        var tabixFile = _.find(item.output.vcf.refs || [], function(ref){
-                            var ext = '.vcf.bgz.tbi';
-                            return ref.substr(-ext.length) === ext;
-                        });
+                    'data:variants:vcf:': function (item, config) {
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bgzipFile = supportedTypes.find(item, 'output.vcf.refs', supportedTypes.patterns['vcf']),
+                            tabixFile = supportedTypes.find(item, 'output.vcf.refs', supportedTypes.patterns['vcfIdx']);
 
-                        return addTrack($.extend({}, {
+                        if (!(bgzipFile && tabixFile)) return;
+
+                        return addTrack({
+                            genialisType: item.type,
                             type: 'JBrowse/View/Track/HTMLVariants',
                             storeClass: 'JBrowse/Store/SeqFeature/VCFTabix',
                             category: 'VCF',
-                            urlTemplate: url + bgzipFile,
-                            tbiUrlTemplate: url + tabixFile,
+                            urlTemplate: url + escUrl(bgzipFile),
+                            tbiUrlTemplate: url + escUrl(tabixFile),
                             label: item.static.name
-                        }, customTrackCfg));
+                        }, config);
                     },
-                    'data:annotation:gff3:': function(item, customTrackCfg) {
+                    'data:annotation:gff3:': function(item, config) {
                         var url = API_DATA_URL + item.id + '/download/';
-
                         if (!_.contains(item.output.gff.refs || [], 'tracks/gff-track')) return;
 
-                        return addTrack($.extend({}, {
-                            type : 'CanvasFeatures',
+                        return addTrack({
+                            genialisType: item.type,
+                            type: 'CanvasFeatures',
                             storeClass: 'JBrowse/Store/SeqFeature/NCList',
                             trackType: 'CanvasFeatures',
                             urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
@@ -188,13 +183,105 @@ angular.module('jbrowse.directives', ['genjs.services'])
                             style: {
                                 className: 'feature'
                             }
-                          }, customTrackCfg));
+                        }, config);
+                    },
+                    'data:annotation:gtf:': function(item, config) {
+                        var url = API_DATA_URL + item.id + '/download/';
+                        if (!_.contains(item.output.gtf.refs || [], 'tracks/gff-track')) return;
+
+                        return addTrack({
+                            genialisType: item.type,
+                            type: 'CanvasFeatures',
+                            storeClass: 'JBrowse/Store/SeqFeature/NCList',
+                            trackType: 'CanvasFeatures',
+                            urlTemplate: url + 'tracks/gff-track/{refseq}/trackData.json',
+                            label: item.static.name,
+                            compress: 0,
+                            style: {
+                                className: 'feature'
+                            }
+                        }, config);
+                    },
+                    'data:mappability:bcm:': function (item, config) {
+                        var url = API_DATA_URL + item.id + '/download/',
+                            bwFile = supportedTypes.find(item, 'output.mappability.refs', supportedTypes.patterns['exprBigWig']);
+
+                        return bwFile && addTrack({
+                            genialisType: item.type,
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name + ' Coverage',
+                            urlTemplate: url + escUrl(bwFile),
+                            autoscale: 'local'
+                        }, config);
+                    },
+                    'data:bigwig:mappability:': function (item, config) {
+                        return addTrack({
+                            genialisType: item.type,
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name,
+                            urlTemplate: API_DATA_URL + item.id + '/download/' + escUrl(item.output.bigwig.file),
+                            autoscale: 'local'
+                        }, config);
                     }
+                };
+
+                loadStateConfigs = function () {
+                    var lastPromise,
+                        StateUrl;
+
+                    StateUrl = $injector.get('StateUrl');
+                    $scope.tracks = StateUrl($scope, ['tracks']).tracks || [];
+                    _.each($scope.tracks, function(cfg) {
+                        var d = $q.defer();
+                        if (typeof lastPromise === 'undefined') {
+                            lastPromise = d.promise;
+                            addTrack(cfg).then(function () {
+                                d.resolve();
+                            });
+                        } else {
+                            lastPromise.then(function () {
+                                addTrack(cfg).then(function () {
+                                    d.resolve();
+                                });
+                            });
+                            lastPromise = d.promise;
+                        }
+                    });
                 };
 
                 // Gets JBrowse track. Searches by label.
                 getTrackByLabel = function (lbl) {
                     return _.findWhere($scope.browser.config.tracks || [], {label: lbl});
+                };
+
+                // Purges reference sequence store.
+                purgeRefSeqs = function (label) {
+                    var purgeStoreDefer = $q.defer();
+                    if ($scope.browser.config.stores) {
+                        // Purge refseqs store before loading new one.
+                         $scope.browser.getStore('refseqs', function (store) {
+                            var seqTrackName;
+                            if (!store) {
+                                purgeStoreDefer.resolve();
+                                return;
+                            }
+                            seqTrackName = store.config.label;
+                            if (label == seqTrackName) {
+                                purgeStoreDefer.reject();
+                                return;
+                            }
+                            // remove all tracks if we're changing sequence.
+                            $scope.options.removeTracks($scope.browser.config.tracks);
+                            delete $scope.browser.config.stores['refseqs'];
+                            if ($scope.browser._storeCache) delete $scope.browser._storeCache['refseqs'];
+                            purgeStoreDefer.resolve();
+                        });
+                    } else {
+                        purgeStoreDefer.resolve();
+                    }
+                    return purgeStoreDefer.promise;
                 };
 
                 // Reloads reference sequences.
@@ -206,7 +293,7 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     delete $scope.browser._deferred['reloadRefSeqs'];
                     deferredSetup = $scope.browser._getDeferred('reloadRefSeqs');
                     setupFn = function () {
-                        if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length == 0) {
+                        if (!('allRefs' in $scope.browser) || _.keys($scope.browser.allRefs).length <= 0) {
                             return;
                         }
                         _.each($scope.browser.allRefs, function (r){
@@ -238,57 +325,112 @@ angular.module('jbrowse.directives', ['genjs.services'])
                 };
 
                 // Adds track to JBrowse.
-                addTrack = function (trackCfg) {
+                addTrack = function (trackCfg, config) {
                     var isSequenceTrack = trackCfg.type == 'JBrowse/View/Track/Sequence',
                         alreadyExists = getTrackByLabel(trackCfg.label) !== undefined,
-                        promise;
+                        deferred;
 
+                    if (!trackCfg.genialisType) throw new Error('Track is missing genialisType');
+                    if (config && config[trackCfg.genialisType]) {
+                        $.extend(trackCfg, config[trackCfg.genialisType]);
+                    }
+
+                    if (trackCfg.dontAdd) return resolvedPromise;
                     if (alreadyExists) {
                         notify({message: "Track " + trackCfg.label + " is already present in the viewport.", type: "danger"});
-                        return;
+                        return resolvedPromise;
                     }
 
-                    // prepare for config loading.
-                    $scope.browser.config.include = [];
-                    if ($scope.browser.reachedMilestone('loadConfig')) {
-                        delete $scope.browser._deferred['loadConfig'];
+                    deferred = $q.defer();
+                    if (trackCfg.urlTemplate && !_.contains(trackCfg.urlTemplate, '{')) { //skip if it contains {refseq} or {refseq_dirpath}
+                        TestFile(trackCfg.urlTemplate, function () {
+                            deferred.resolve(true);
+                        }, function () {
+                            deferred.resolve(false);
+                        });
+                    } else {
+                        deferred.resolve(true);
                     }
 
-                    $scope.browser.config.include.push({
-                        format: 'JB_json',
-                        version: 1,
-                        data: {
-                            sourceUrl: trackCfg.baseUrl || '#',
-                            tracks: [trackCfg]
-                        }
-                    });
+                    return deferred.promise.then(function (wasSuccessful) {
+                        var load;
 
-                    promise = $scope.browser.loadConfig();
-                    promise.then(function () {
-                        // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
-                        // which will be used for loading sequence chunks.
-                        if (isSequenceTrack) {
-                            $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
+                        if (!wasSuccessful) {
+                            notify({message: 'Because there was an issue with track ' + trackCfg.label + ', it will not be shown', type: 'error'});
+                            return;
                         }
 
-                        $scope.browser.showTracks([trackCfg.label]);
-                    });
+                        load = function () {
+                            // prepare for config loading.
+                            $scope.browser.config.include = [];
+                            if ($scope.browser.reachedMilestone('loadConfig')) {
+                                delete $scope.browser._deferred['loadConfig'];
+                            }
 
-                    return promise;
+                            $scope.browser.config.include.push({
+                                format: 'JB_json',
+                                version: 1,
+                                data: {
+                                    sourceUrl: trackCfg.baseUrl || '#',
+                                    tracks: [trackCfg]
+                                }
+                            });
+
+                            return $scope.browser.loadConfig().then(function () {
+                                // NOTE: must be in this order, since navigateToLocation will set reference sequence name,
+                                // which will be used for loading sequence chunks.
+                                if (isSequenceTrack) {
+                                    $scope.browser.navigateToLocation({ref: _.values($scope.browser.allRefs)[0].name});
+                                }
+
+                                $scope.browser.showTracks([trackCfg.label]);
+                                if (typeof _.findWhere($scope.tracks, {label: trackCfg.label}) == 'undefined') {
+                                    $scope.tracks.push(trackCfg);
+                                }
+
+                                if (trackCfg.genialisType in ($scope.options.afterAdd || {})) {
+                                    $scope.options.afterAdd[trackCfg.genialisType].call($scope.browser);
+                                }
+                                return true;
+                            });
+                        };
+
+                        if (trackCfg.genialisType in beforeAdd) {
+                            return beforeAdd[trackCfg.genialisType](trackCfg).then(load);
+                        } else {
+                            return load();
+                        }
+                    });
                 };
 
                 // Publicly exposed API.
-                $scope.options.addTrack = function (item, customTrackCfg) {
-                    if (item.type in typeHandlers) {
-                        var promise = typeHandlers[item.type](item, customTrackCfg);
+                /**
+                 *  config can contain the following keys: {
+                 *      'data:genome:fasta:': {},
+                 *      'data:genome:fasta:gc': {},
+                 *      'data:alignment:bam:': {},
+                 *      'data:alignment:bam:bigwig': {},
+                 *      'data:expression:polya:': {},
+                 *      'data:variants:vcf:': {},
+                 *      'data:annotation:gff3:': {},
+                 *      'data:annotation:gtf:': {},
+                 *      'data:mappability:bcm:': {},
+                 *      'data:bigwig:mappability:': {}
+                 *  }
+                 *  Tracks are assigned genialisType = item's type + subtype.
+                 *  Track configuration is extended with config[genialisType].
+                 *
+                 *  config[genialisType] can also contain dontAdd property, which will prevent track from being added.
+                 */
+                $scope.options.addTrack = function (item, config) {
+                    var maybePromise;
 
-                        if (item.type in ($scope.options.afterAdd || {})) {
-                            $scope.options.afterAdd[item.type].call($scope.browser);
-                        }
-                        return promise;
-                    } else {
-                        console.log('No handler for data type ' + item.type + ' defined.');
-                    }
+                    if (!(item.type in typeHandlers)) throw new Error('No handler for data type ' + item.type + ' defined.');
+                    maybePromise = typeHandlers[item.type](item, config);
+                    // definitely promise
+                    return resolvedPromise.then(function () {
+                        return maybePromise;
+                    });
                 };
 
                 $scope.options.removeTracks = function (tracks) {
@@ -329,10 +471,17 @@ angular.module('jbrowse.directives', ['genjs.services'])
                     // remove global menu bar
                     $scope.browser.afterMilestone('initView', function () {
                         dojo.destroy($scope.browser.menuBar);
+                        $scope.tracks = [];
+                        if ($scope.options.keepState) loadStateConfigs();
                     });
                     // make sure tracks detached from the view ('hidden') actually are deleted in the browser instance
                     $scope.browser.subscribe('/jbrowse/v1/c/tracks/hide', function (trackCfgs) {
+                        var removedLabels = _.pluck(trackCfgs, 'label');
                         $scope.browser.publish('/jbrowse/v1/v/tracks/delete', trackCfgs);
+                        $scope.tracks = _.filter($scope.tracks, function (track) {
+                            return removedLabels.indexOf(track.label) == -1;
+                        });
+                        $scope.$digest();
                     });
 
                     if (_.isFunction($scope.options.onConnect || {})) {
@@ -388,10 +537,10 @@ angular.module('jbrowse.directives', ['genjs.services'])
 
                 // Destroy everything, otherwise jBrowse doesnt want to initialize again (unless page reloaded)
                 $scope.$on('$destroy', function () {
-                    _.each(dijit.registry.findWidgets($scope.browser.menuBar), function (w) {
-                        w.destroyRecursive();
+                    _.each(dijit.registry.toArray(), function (e) {
+                        var r = e.id && dijit.registry.byId(e.id);
+                        r && r.destroy();
                     });
-                    dijit.registry.byId($scope.config['containerID']).destroyRecursive();
                 });
             }]
         };
