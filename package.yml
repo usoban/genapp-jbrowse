@@ -1,4 +1,4 @@
-name: jBrowse
+title: jBrowse
 modules:
     - jbrowse
 version: 1.0.0
