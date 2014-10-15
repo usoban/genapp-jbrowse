@@ -88,7 +88,7 @@ angular.module('jbrowse.controllers', ['genjs.services', 'jbrowse.services'])
         };
 
         var config = {
-            'data:reads:bigwig:': {
+            'data:reads:coverage:': {
                 min_score: 0,
                 max_score: 35
             }
