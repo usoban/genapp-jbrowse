@@ -132,13 +132,13 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             var bigWigFile = supportedTypes.find(item, 'output.bam.refs', supportedTypes.patterns['bigWig']);
                             return bigWigFile && $scope.options.addTrack({
                                 id: item.id,
-                                type: 'data:reads:bigwig:',
+                                type: 'data:reads:coverage:',
                                 static: { name: item.static.name + ' Coverage' },
                                 output: { bigwig: { file: bigWigFile } }
                             }, config);
                         });
                     },
-                    'data:reads:bigwig:': function (item, config) {
+                    'data:reads:coverage:': function (item, config) {
                         var url = API_DATA_URL + item.id + '/download/';
                         return addTrack({
                             genialisType: item.type,
