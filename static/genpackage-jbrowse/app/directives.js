@@ -128,15 +128,25 @@ angular.module('jbrowse.directives', ['genjs.services', 'jbrowse.services'])
                             baiUrlTemplate: url + escUrl(item.output.bai.file),
                             label: item.static.name
                         }, config).then(function () {
+                            // backwards compatibility
                             var bigWigFile = supportedTypes.find(item, 'output.bam.refs', supportedTypes.patterns['bigWig']);
-                            return bigWigFile && addTrack({
-                                genialisType: item.type + 'bigwig:',
-                                type: 'JBrowse/View/Track/Wiggle/XYPlot',
-                                storeClass: 'JBrowse/Store/SeqFeature/BigWig',
-                                label: item.static.name + ' Coverage',
-                                urlTemplate: url + escUrl(bigWigFile)
+                            return bigWigFile && $scope.options.addTrack({
+                                id: item.id,
+                                type: 'data:reads:coverage:',
+                                static: { name: item.static.name + ' Coverage' },
+                                output: { bigwig: { file: bigWigFile } }
                             }, config);
                         });
+                    },
+                    'data:reads:coverage:': function (item, config) {
+                        var url = API_DATA_URL + item.id + '/download/';
+                        return addTrack({
+                            genialisType: item.type,
+                            type: 'JBrowse/View/Track/Wiggle/XYPlot',
+                            storeClass: 'JBrowse/Store/SeqFeature/BigWig',
+                            label: item.static.name,
+                            urlTemplate: url + escUrl(item.output.bigwig.file)
+                        }, config);
                     },
                     'data:expression:polya:': function (item, config) {
                         var url = API_DATA_URL + item.id + '/download/',
