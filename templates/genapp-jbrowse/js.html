@@ -27,7 +27,16 @@
 <script src="{{ STATIC_URL }}jbrowse-1.11.4/src/dojo/dojo.js"></script>
 <script src="{{ STATIC_URL }}jbrowse-1.11.4/src/JBrowse/init.js"></script>
 
+<script type="text/javascript" src="{{ STATIC_URL }}js/ws4redis.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/deep-diff.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/object-hash.js"></script>
+
 <script src="{{ STATIC_URL }}genapp-jbrowse/app/app.js"></script>
 <script src="{{ STATIC_URL }}genapp-jbrowse/app/controllers.js"></script>
 <script src="{{ STATIC_URL }}genapp-jbrowse/app/directives.js"></script>
 <script src="{{ STATIC_URL }}genapp-jbrowse/app/services.js"></script>
+
+<script type="text/javascript">
+    var WEBSOCKET_URI = '{{ WEBSOCKET_URI }}';
+    var WS4REDIS_HEARTBEAT = {{ WS4REDIS_HEARTBEAT }};
+</script>
