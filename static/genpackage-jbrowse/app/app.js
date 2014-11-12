@@ -17,7 +17,7 @@
  */
 angular.module('jbrowse', [
     'ngRoute', 'ngGrid', 'genjs.services', 'genjs.table', 'ui.bootstrap', 'jbrowse.controllers',
-    'jbrowse.services', 'jbrowse.directives', 'genexpress.services'])
+    'jbrowse.services', 'jbrowse.directives'])
 
     .config(['$routeProvider', function ($routeProvider) {
 
@@ -36,4 +36,8 @@ angular.module('jbrowse', [
         });
     }])
     .constant('title', 'JBrowse')
+
+    .config(['StateUrlProvider', function (StateUrlProvider) {
+        StateUrlProvider.localstoragePath = 'jbrowseState';
+    }])
 ;
